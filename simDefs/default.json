@@ -1,8 +1,10 @@
 {
     "oxTank": {
+        "name": "oxTank",
         "volume": 7.37,
         "volumeUnit": "L",
         "liquid": {
+            "name": "liquid",
             "mass": 5.6,
             "massUnit": "kg"
         }
@@ -10,7 +12,17 @@
     "endConditions": {
         "lowOxMass": 0,
         "lowOxMassUnit": "kg",
-        "burnTime": 3,
-        "burnTimeUnit": "s"
+        "endTime": 3,
+        "endTimeUnit": "s"
+    },
+    "simControl": {
+        "startTime": 0,
+        "startTimeUnit": "s",
+        "timeStep": 0.001,
+        "timeStepUnit": "s"
+    },
+    "parameters": {
+        "oxMassFlow": 2,
+        "oxMassFlowUnit": "kg"
     }
 }

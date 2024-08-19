@@ -2,13 +2,13 @@ from functions.fileIO import *
 from classes.Tank import *
 from classes.State import *
 from classes.Engine import *
-
-import pandas as pd
+from classes.EndConditions import *
 
 dic = LoadJson("simDefs/default.json")
 
 engine = Engine()
-engine.load(dic)
+engine.Load(dic)
 
-print(engine.oxTank.volume)
-log = pd.DataFrame()
+engine.drainOxTank()
+
+print(engine.log)

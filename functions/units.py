@@ -17,6 +17,13 @@ def convertToSI(value, unit, dim):
         else:
             raise ValueError("Unsupported mass unit type.")
 
+    elif dim == "time":
+        if unit == "s":
+            return value
+        
+        else:
+            raise ValueError("Unsupported time unit type.")
+
     else:
         raise ValueError("Unsupported dimension type.")
 
