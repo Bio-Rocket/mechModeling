@@ -1,0 +1,16 @@
+{
+    "oxTank": {
+        "volume": 7.37,
+        "volumeUnit": "L",
+        "liquid": {
+            "mass": 5.6,
+            "massUnit": "kg"
+        }
+    },
+    "endConditions": {
+        "lowOxMass": 0,
+        "lowOxMassUnit": "kg",
+        "burnTime": 3,
+        "burnTimeUnit": "s"
+    }
+}
