@@ -50,10 +50,15 @@ class Engine:
         3. Fixed mass flow rate.
     '''
     def drainOxTank(self):
+        print("Running simulation...")
         self.Log()
         endReached = False
 
         while not endReached:
+
+            if self.simControl.currentTime * (1 / self.simControl.timeStep) % 100 == 0:
+                print("Current time: " + str(self.simControl.currentTime))
+
             self.simControl.UpdateTime()
             self.oxTank.RemoveLiquidMass(self.parameters.oxMassFlow, self.simControl.timeStep)
 
@@ -62,3 +67,8 @@ class Engine:
                 break
 
             self.Log()
+            
+            #set to True to run only once, for testing
+            #endReached = True
+
+        self.log.to_csv("log.csv")

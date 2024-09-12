@@ -5,8 +5,13 @@
         "volumeUnit": "L",
         "liquid": {
             "name": "liquid",
+            "fluid": "NITROUSOXIDE",
             "mass": 5.6,
-            "massUnit": "kg"
+            "temperature": 15,
+            "temperatureUnit": "C",
+            "massUnit": "kg",
+            "pressure": 1350,
+            "pressureUnit": "psi"
         }
     },
     "endConditions": {
@@ -22,7 +27,7 @@
         "timeStepUnit": "s"
     },
     "parameters": {
-        "oxMassFlow": 2,
+        "oxMassFlow": 1.868734672,
         "oxMassFlowUnit": "kg"
     }
 }
