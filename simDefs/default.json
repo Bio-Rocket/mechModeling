@@ -14,6 +14,21 @@
             "pressureUnit": "psi"
         }
     },
+    "N2Tank": {
+        "name": "N2Tank",
+        "volume": 8.97,
+        "volumeUnit": "L",
+        "liquid": {
+            "name": "liquid",
+            "fluid": "NITROUSOXIDE",
+            "mass": 1.91,
+            "massUnit": "kg",
+            "temperature": 15,
+            "temperatureUnit": "C",
+            "pressure": 4000,
+            "pressureUnit": "psi"
+        }
+    },
     "endConditions": {
         "lowOxMass": 0,
         "lowOxMassUnit": "kg",
