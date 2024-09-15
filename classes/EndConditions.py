@@ -8,6 +8,9 @@ class EndConditions:
     def __init__(self):
         pass
 
-    def Load(self, dic):
-        self.lowOxMass = convertToSI(dic["lowOxMass"], dic["lowOxMassUnit"], "mass")
+    def Load(self, dic, tank):
+        if tank == "ox":
+            self.lowOxMass = convertToSI(dic["lowOxMass"], dic["lowOxMassUnit"], "mass")
+        elif tank == "pressurant":
+            self.lowPressurantMass = convertToSI(dic["lowPressurantMass"], dic["lowPressurantMassUnit"], "mass")
         self.endTime = convertToSI(dic["endTime"], dic["endTimeUnit"], "time")

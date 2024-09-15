@@ -1,14 +1,18 @@
 from functions.fileIO import *
-from classes.Tank import *
+from classes.OxTank import *
 from classes.State import *
 from classes.Engine import *
 from classes.EndConditions import *
 
-dic = LoadJson("simDefs/default.json")
+#dic = LoadJSON("simDefs/default.json") # Original data file that Lukas' created
+dic = LoadJSON("simDefs/mass budget_09-15-2024.json") # Mass budget values as of Sept. 15, 2024 (https://docs.google.com/spreadsheets/d/18GnIIEJeY7-gzHpHSoPhtmgDRNokLcbnRhNP7b0LVrU/edit?gid=879026709#gid=879026709)
 
 engine = Engine()
-engine.Load(dic)
 
+engine.LoadOx(dic)
 engine.drainOxTank()
+print(engine.log_ox)
 
-print(engine.log)
+engine.LoadPressurant(dic)
+engine.drainPressurantTank()
+print(engine.log_pressurant)

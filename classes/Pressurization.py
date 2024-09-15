@@ -1,4 +1,5 @@
-from classes.Tank import *
+from classes.OxTank import *
+from classes.PressurantTank import *
 from classes.EndConditions import *
 from classes.SimControl import *
 from classes.Parameters import *
@@ -14,4 +15,10 @@ class Pressurization:
     log = "" #dataFrame tracking simulation values
 
     def __init__(self):
-        self.log = pd.DataFrame()
+        pass
+
+    #fanno flow function
+    #inputs:
+    #
+    def FannoTimize(Ti, To, friction):
+        pass

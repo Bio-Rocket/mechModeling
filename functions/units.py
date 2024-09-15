@@ -13,6 +13,9 @@ def convertToSI(value, unit, dim):
     elif dim == "mass":
         if unit == "kg":
             return value
+        
+        if unit == "lbm":
+            return value * 0.453592
 
         else:
             raise ValueError("Unsupported mass unit type.")

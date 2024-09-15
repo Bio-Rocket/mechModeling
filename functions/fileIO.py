@@ -12,7 +12,7 @@ import json
         contents:
             Python dictionary containing the information in the .json file
 '''
-def LoadJson(path):
+def LoadJSON(path):
     with open(path) as file:
         contents = json.load(file)
 
