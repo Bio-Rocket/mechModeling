@@ -107,8 +107,8 @@ class Engine:
             if self.simControl_pressurant.currentTime * (1 / self.simControl_pressurant.timeStep) % 100 == 0:
                 print("Current time: " + str(self.simControl_pressurant.currentTime))
             self.simControl_pressurant.UpdateTime()
-            self.oxTank.RemoveLiquidMass(self.parameters_pressurant.oxMassFlow, self.simControl_pressurant.timeStep)
-            if self.oxTank.liquid.mass <= self.endConditions_pressurant.lowOxMass:
+            self.pressurantTank.RemovegasMass(self.parameters_pressurant.pressurantMassFlow, self.simControl_pressurant.timeStep)
+            if self.pressurantTank.gas.mass <= self.endConditions_pressurant.lowPressurantMass:
                 endReached = True
                 break
 
