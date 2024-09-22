@@ -1,12 +1,12 @@
 {
     "oxTank": {
         "name": "oxTank",
-        "volume": 7.37,
+        "volume": 10.19,
         "volumeUnit": "L",
         "liquid": {
             "name": "liquid",
             "fluid": "NITROUSOXIDE",
-            "mass": 5.6,
+            "mass": 8.903,
             "massUnit": "kg",
             "temperature": 15,
             "temperatureUnit": "C",
@@ -14,19 +14,19 @@
             "pressureUnit": "psi"
         }
     },
-    "pressTank": {
-        "name": "pressTank",
-        "volume": 4.196760517,
+    "pressurantTank": {
+        "name": "pressurantTank",
+        "volume": 8.97,
         "volumeUnit": "L",
         "gas": {
             "name": "gas",
-            "fluid": "N2",
+            "fluid": "NITROGEN",
+            "mass": 1.911,
+            "massUnit": "kg",
             "temperature": 15,
             "temperatureUnit": "C",
             "pressure": 5800,
-            "pressureUnit": "psi",
-            "volume": 4.196760517,
-            "volumeUnit": "L"
+            "pressureUnit": "psi"
         }
     },
     "endConditions": {

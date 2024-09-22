@@ -42,7 +42,12 @@ class OxTank:
         u1 = self.liquid.internalEnergy
 
         u2 = (m1 * u1 - deltaM * hOut) / m2
-
+        
+        #if flow rate is large, enthalpy calculated here sometimes becomes negative
+        #from which exit calculation and return values
+        if u2 <= 0:
+            return
+        
         #assuming pressure stays constant (due to active pressure control), update other properties
         self.liquid.internalEnergy = u2
         self.liquid.temperature = cp.PropsSI('T', 'P', self.liquid.pressure, 'U', u2, self.liquid.fluid)

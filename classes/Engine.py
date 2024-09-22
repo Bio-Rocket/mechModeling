@@ -13,10 +13,12 @@ class Engine:
     endConditions = "" #instance of class EndConditions
     simControl = "" #instance of class simControl
     parameters = "" #instance of class parameters
-    log = "" #dataFrame tracking simulation values
+    log_ox = "" #dataFrame tracking simulation values for Oxidizer tank
+    log_pressurant = "" #dataFrame tracking simulation values for Pressurant tank
 
     def __init__(self):
-        self.log = pd.DataFrame()
+        self.log_ox = pd.DataFrame()
+        self.log_pressurant = pd.DataFrame()
 
     def Load(self, dic):
         self.oxTank = OxTank()
@@ -28,13 +30,13 @@ class Engine:
         self.endConditions = EndConditions()
         self.endConditions.Load(dic["endConditions"])
 
-        self.simControl = SimControl()
-        self.simControl.Load(dic["simControl"])
+        self.simControl_ox = SimControl()
+        self.simControl_ox.Load(dic["simControl"])
 
-        self.parameters = Parameters()
-        self.parameters.load(dic["parameters"])
+        self.parameters_ox = Parameters()
+        self.parameters_ox.load(dic["parameters"], tank)
 
-        self.InitLog()
+        self.InitLog("ox")
 
     def InitLog(self):
         self.oxTank.InitLog(self.log, "engine")
@@ -78,9 +80,9 @@ class Engine:
                 endReached = True
                 break
 
-            self.Log()
+            self.Log("pressurant")
             
             #set to True to run only once, for testing
             #endReached = True
 
-        self.log.to_csv("log.csv")
+        self.log_pressurant.to_csv("log_pressurant.csv")
