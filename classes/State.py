@@ -24,16 +24,35 @@ class State:
         pass
 
     def Load(self, dic):
-        self.mass = convertToSI(dic["mass"], dic["massUnit"], "mass")
+        
         self.name = dic["name"]
         self.fluid = dic["fluid"]
-        self.temperature = convertToSI(dic["temperature"], dic["temperatureUnit"], "temperature")
-        self.pressure = convertToSI(dic["pressure"], dic["pressureUnit"], "pressure")
 
-        self.density = cp.PropsSI('D', 'P', self.pressure, 'T', self.temperature, self.fluid)
-        self.volume = self.mass / self.density
-        self.enthalpy = cp.PropsSI('H', 'P', self.pressure, 'T', self.temperature, self.fluid)
-        self.internalEnergy = cp.PropsSI('U', 'P', self.pressure, 'T', self.temperature, self.fluid)
+        #Option 1 initialize using mass, temperature, and pressure (used for NOS liquid)
+        try:
+            self.mass = convertToSI(dic["mass"], dic["massUnit"], "mass")
+            self.temperature = convertToSI(dic["temperature"], dic["temperatureUnit"], "temperature")
+            self.pressure = convertToSI(dic["pressure"], dic["pressureUnit"], "pressure")
+
+            self.density = cp.PropsSI('D', 'P', self.pressure, 'T', self.temperature, self.fluid)
+            self.volume = self.mass / self.density
+            self.enthalpy = cp.PropsSI('H', 'P', self.pressure, 'T', self.temperature, self.fluid)
+            self.internalEnergy = cp.PropsSI('U', 'P', self.pressure, 'T', self.temperature, self.fluid)
+
+        except:
+            #Option 2 initialize using volume, pressure, temperature
+            try: 
+                self.temperature = convertToSI(dic["temperature"], dic["temperatureUnit"], "temperature")
+                self.pressure = convertToSI(dic["pressure"], dic["pressureUnit"], "pressure")
+                self.volume = convertToSI(dic["volume"], dic["volumeUnit"], "volume")
+
+                self.density = cp.PropsSI('D', 'P', self.pressure, 'T', self.temperature, self.fluid)
+                self.mass = self.density * self.volume
+                self.enthalpy = cp.PropsSI('H', 'P', self.pressure, 'T', self.temperature, self.fluid)
+                self.internalEnergy = cp.PropsSI('U', 'P', self.pressure, 'T', self.temperature, self.fluid)
+
+            except: 
+                pass
 
     def InitLog(self, log, name):
         name += "." + self.name

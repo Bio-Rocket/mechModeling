@@ -1,7 +1,7 @@
 from functions.units import *
 from classes.State import *
 
-class Tank:
+class OxTank:
     #constants
     name = "" #name of the tank
     volume = 0 #total volume of rigid tank, in m3

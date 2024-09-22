@@ -1,4 +1,5 @@
-from classes.Tank import *
+from classes.OxTank import *
+from classes.PressTank import *
 from classes.EndConditions import *
 from classes.SimControl import *
 from classes.Parameters import *
@@ -7,7 +8,8 @@ import pandas as pd
 import numpy as np
 
 class Engine:
-    oxTank = "" #instance of class tank
+    oxTank = "" #instance of class Oxtank
+    pressTank = '' #instance of class PressTank
     endConditions = "" #instance of class EndConditions
     simControl = "" #instance of class simControl
     parameters = "" #instance of class parameters
@@ -17,8 +19,11 @@ class Engine:
         self.log = pd.DataFrame()
 
     def Load(self, dic):
-        self.oxTank = Tank()
+        self.oxTank = OxTank()
         self.oxTank.Load(dic["oxTank"])
+
+        self.pressTank = PressTank()
+        self.pressTank.Load(dic["pressTank"])
 
         self.endConditions = EndConditions()
         self.endConditions.Load(dic["endConditions"])
@@ -33,11 +38,13 @@ class Engine:
 
     def InitLog(self):
         self.oxTank.InitLog(self.log, "engine")
+        self.pressTank.InitLog(self.log, "engine")
         self.simControl.InitLog(self.log)
 
     def Log(self):
         self.log = pd.concat([self.log, pd.DataFrame([{col: None for col in self.log.columns}])], ignore_index=True)
         self.oxTank.Log(self.log, "engine")
+        self.pressTank.Log(self.log, "engine")
         self.simControl.Log(self.log)
 
     '''
@@ -49,18 +56,23 @@ class Engine:
         2. No heat transfer to the tank.
         3. Fixed mass flow rate.
     '''
-    def drainOxTank(self):
+    def drainTanks(self):
         print("Running simulation...")
+
+        self.pressTank.CalcGassMassFlow(self.parameters.oxMassFlow, self.oxTank.liquid)
+
         self.Log()
         endReached = False
 
         while not endReached:
 
-            if self.simControl.currentTime * (1 / self.simControl.timeStep) % 100 == 0:
+            if self.simControl.currentTime * int(1 / self.simControl.timeStep) % 100 == 0:
                 print("Current time: " + str(self.simControl.currentTime))
 
             self.simControl.UpdateTime()
             self.oxTank.RemoveLiquidMass(self.parameters.oxMassFlow, self.simControl.timeStep)
+
+            self.pressTank.RemoveGasMass(self.parameters.oxMassFlow, self.simControl.timeStep, self.oxTank.liquid)
 
             if self.oxTank.liquid.mass <= self.endConditions.lowOxMass:
                 endReached = True
