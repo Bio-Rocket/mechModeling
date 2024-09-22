@@ -14,19 +14,19 @@
             "pressureUnit": "psi"
         }
     },
-    "pressurantTank": {
-        "name": "pressurantTank",
-        "volume": 8.97,
+    "pressTank": {
+        "name": "pressTank",
+        "volume": 4.196760517,
         "volumeUnit": "L",
         "gas": {
             "name": "gas",
-            "fluid": "NITROGEN",
-            "mass": 1.911,
-            "massUnit": "kg",
+            "fluid": "N2",
             "temperature": 15,
             "temperatureUnit": "C",
             "pressure": 5800,
-            "pressureUnit": "psi"
+            "pressureUnit": "psi",
+            "volume": 4.196760517,
+            "volumeUnit": "L"
         }
     },
     "endConditions": {
