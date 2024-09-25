@@ -3,13 +3,16 @@ from classes.PressTank import *
 from classes.EndConditions import *
 from classes.SimControl import *
 from classes.Parameters import *
+from classes.FlowLine import *
 
 import pandas as pd
 import numpy as np
 
 class Engine:
     oxTank = "" #instance of class Oxtank
-    pressTank = '' #instance of class PressTank
+    pressTank = "" #instance of class PressTank
+    flowLine = "" #instance of class FlowLine
+
     endConditions = "" #instance of class EndConditions
     simControl = "" #instance of class simControl
     parameters = "" #instance of class parameters
@@ -25,6 +28,12 @@ class Engine:
         self.pressTank = PressTank()
         self.pressTank.Load(dic["pressTank"])
 
+        self.flowLine = FlowLine()
+        self.flowLine.Load(dic["flowLine"])
+        self.flowLine.inlet = self.pressTank.gas
+        #This will need to be changed once a gas state is added to the ox tank.
+        self.flowLine.outlet = self.oxTank.liquid
+
         self.endConditions = EndConditions()
         self.endConditions.Load(dic["endConditions"])
 
@@ -39,11 +48,13 @@ class Engine:
     def InitLog(self):
         self.oxTank.InitLog(self.log, "engine")
         self.pressTank.InitLog(self.log, "engine")
+        self.flowLine.InitLog(self.log, "engine")
         self.simControl.InitLog(self.log)
 
     def Log(self):
         self.log = pd.concat([self.log, pd.DataFrame([{col: None for col in self.log.columns}])], ignore_index=True)
         self.oxTank.Log(self.log, "engine")
+        self.flowLine.Log(self.log, "engine")
         self.pressTank.Log(self.log, "engine")
         self.simControl.Log(self.log)
 
@@ -60,6 +71,7 @@ class Engine:
         print("Running simulation...")
 
         self.pressTank.CalcGassMassFlow(self.parameters.oxMassFlow, self.oxTank.liquid)
+        self.flowLine.UpdateFlowLine(self.pressTank.pressurantMassFlowRate)
 
         self.Log()
         endReached = False
@@ -75,7 +87,7 @@ class Engine:
                 endReached = True
                 print("Simulation terminated. Reached end time.")
                 break
-                
+
             self.oxTank.RemoveLiquidMass(self.parameters.oxMassFlow, self.simControl.timeStep)
 
             if self.oxTank.liquid.mass <= self.endConditions.lowOxMass:
@@ -97,7 +109,6 @@ class Engine:
             self.Log()
             
             #set to True to run only once, for testing
-            if self.simControl.currentTime >= 0.3:
-                endReached = True
+            endReached = True
 
         self.log.to_csv("log.csv")

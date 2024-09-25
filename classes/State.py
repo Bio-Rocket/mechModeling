@@ -19,6 +19,8 @@ class State:
     pressure = 0 #pressure of the phase, in Pa
     enthalpy = 0 #enthalpy of the phase, in J/kg
     internalEnergy = 0 #internal energy of the phase, in J/kg
+    sonicVelocity = 0 #speed of sound, in m/s
+    dynamicViscosity = 0 #dynamic viscosity, in Pa * s
 
     def __init__(self):
         pass
@@ -38,6 +40,8 @@ class State:
             self.volume = self.mass / self.density
             self.enthalpy = cp.PropsSI('H', 'P', self.pressure, 'T', self.temperature, self.fluid)
             self.internalEnergy = cp.PropsSI('U', 'P', self.pressure, 'T', self.temperature, self.fluid)
+            self.sonicVelocity = cp.PropsSI('A', 'P', self.pressure, 'T', self.temperature, self.fluid)
+            self.dynamicViscosity = cp.PropsSI('V', 'P', self.pressure, 'T', self.temperature, self.fluid)
 
         except:
             #Option 2 initialize using volume, pressure, temperature
@@ -50,6 +54,8 @@ class State:
                 self.mass = self.density * self.volume
                 self.enthalpy = cp.PropsSI('H', 'P', self.pressure, 'T', self.temperature, self.fluid)
                 self.internalEnergy = cp.PropsSI('U', 'P', self.pressure, 'T', self.temperature, self.fluid)
+                self.sonicVelocity = cp.PropsSI('A', 'P', self.pressure, 'T', self.temperature, self.fluid)
+                self.dynamicViscosity = cp.PropsSI('V', 'P', self.pressure, 'T', self.temperature, self.fluid)
 
             except: 
                 pass

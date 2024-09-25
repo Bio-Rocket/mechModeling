@@ -29,6 +29,13 @@
             "volumeUnit": "L"
         }
     },
+    "flowLine": {
+        "name": "flowLine",
+        "innerDiameter": 0.187,
+        "innerDiameterUnit": "in",
+        "length": 12,
+        "lengthUnit": "in"
+    },
     "endConditions": {
         "lowOxMass": 0,
         "lowOxMassUnit": "kg",

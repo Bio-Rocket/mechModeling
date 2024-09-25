@@ -56,3 +56,5 @@ class PressTank:
         self.gas.temperature = cp.PropsSI('T', 'D', self.gas.density, 'U', self.gas.internalEnergy, self.gas.fluid)
         self.gas.enthalpy = cp.PropsSI('H', 'D', self.gas.density, 'U', self.gas.internalEnergy, self.gas.fluid)
         self.gas.pressure = cp.PropsSI('P', 'D', self.gas.density, 'U', self.gas.internalEnergy, self.gas.fluid)
+        self.gas.sonicVelocity = cp.PropsSI('A', 'D', self.gas.density, 'U', self.gas.internalEnergy, self.gas.fluid)
+        self.gas.dynamicViscosity = cp.PropsSI('V', 'D', self.gas.density, 'U', self.gas.internalEnergy, self.gas.fluid)

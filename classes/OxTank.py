@@ -52,3 +52,7 @@ class OxTank:
         self.liquid.density = cp.PropsSI('D', 'P', self.liquid.pressure, 'U', u2, self.liquid.fluid)
         self.liquid.volume = self.liquid.mass / self.liquid.density
         self.liquid.enthalpy = cp.PropsSI('H', 'P', self.liquid.pressure, 'U', u2, self.liquid.fluid)
+        self.liquid.sonicVelocity = cp.PropsSI('A', 'P', self.liquid.pressure, 'U', u2, self.liquid.fluid)
+        
+        #There is no dynamic viscosity model available for nitrous in CoolProp :(
+        #self.liquid.dynamicViscosity = cp.PropsSI('V', 'P', self.liquid.pressure, 'U', u2, self.liquid.fluid)
