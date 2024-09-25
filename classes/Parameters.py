@@ -6,8 +6,5 @@ class Parameters:
     def __init__(self):
         pass
 
-    def load(self, dic, tank):
-        if tank == "ox":
-            self.oxMassFlow = convertToSI(dic["oxMassFlow"], dic["oxMassFlowUnit"], "mass")
-        elif tank == "pressurant":
-            self.pressurantMassFlow = convertToSI(dic["pressurantMassFlow"], dic["pressurantMassFlowUnit"], "mass")
+    def load(self, dic):
+        self.oxMassFlow = convertToSI(dic["oxMassFlow"], dic["oxMassFlowUnit"], "mass")

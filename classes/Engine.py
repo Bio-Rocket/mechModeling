@@ -13,12 +13,10 @@ class Engine:
     endConditions = "" #instance of class EndConditions
     simControl = "" #instance of class simControl
     parameters = "" #instance of class parameters
-    log_ox = "" #dataFrame tracking simulation values for Oxidizer tank
-    log_pressurant = "" #dataFrame tracking simulation values for Pressurant tank
+    log = "" #dataFrame tracking simulation values for Oxidizer tank
 
     def __init__(self):
-        self.log_ox = pd.DataFrame()
-        self.log_pressurant = pd.DataFrame()
+        self.log = pd.DataFrame()
 
     def Load(self, dic):
         self.oxTank = OxTank()
@@ -30,13 +28,13 @@ class Engine:
         self.endConditions = EndConditions()
         self.endConditions.Load(dic["endConditions"])
 
-        self.simControl_ox = SimControl()
-        self.simControl_ox.Load(dic["simControl"])
+        self.simControl = SimControl()
+        self.simControl.Load(dic["simControl"])
 
-        self.parameters_ox = Parameters()
-        self.parameters_ox.load(dic["parameters"], tank)
+        self.parameters = Parameters()
+        self.parameters.load(dic["parameters"])
 
-        self.InitLog("ox")
+        self.InitLog()
 
     def InitLog(self):
         self.oxTank.InitLog(self.log, "engine")
@@ -68,8 +66,8 @@ class Engine:
 
         while not endReached:
 
-            if self.simControl.currentTime * int(1 / self.simControl.timeStep) % 100 == 0:
-                print("Current time: " + str(self.simControl.currentTime))
+            if int( self.simControl.currentTime * (1 / self.simControl.timeStep)) % 100 == 0:
+                print("Current time: %.3f" % self.simControl.currentTime)
 
             self.simControl.UpdateTime()
             self.oxTank.RemoveLiquidMass(self.parameters.oxMassFlow, self.simControl.timeStep)
@@ -80,9 +78,10 @@ class Engine:
                 endReached = True
                 break
 
-            self.Log("pressurant")
+            self.Log()
             
             #set to True to run only once, for testing
-            #endReached = True
+            if self.simControl.currentTime >= 0.3:
+                endReached = True
 
-        self.log_pressurant.to_csv("log_pressurant.csv")
+        self.log.to_csv("log.csv")
