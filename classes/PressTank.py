@@ -38,8 +38,6 @@ class PressTank:
         self.CalcGassMassFlow(oxMassFlowRate, liquidOx)
         self.gas.mass -= self.pressurantMassFlowRate * timeStep
 
-        self.RemoveGasEnergy(timeStep)
-
     def RemoveGasEnergy(self, timeStep):
         #assuming no heat transfer or work done, no mass in, negligible changes in K.E., P.E. 
         #applying conservation of energy gives:

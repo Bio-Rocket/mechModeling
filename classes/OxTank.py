@@ -29,8 +29,6 @@ class OxTank:
     def RemoveLiquidMass(self, massFlowRate, timeStep):
         self.liquid.mass -= massFlowRate * timeStep
 
-        self.RemoveLiquidEnergy(massFlowRate, timeStep)
-
     def RemoveLiquidEnergy(self, massFlowRate, timeStep):
         #assuming no heat transfer or work done, no mass in, negligible changes in K.E., P.E. 
         #applying conservation of energy gives:

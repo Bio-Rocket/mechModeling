@@ -32,7 +32,7 @@
     "endConditions": {
         "lowOxMass": 0,
         "lowOxMassUnit": "kg",
-        "lowPressurantMass": 0.528,
+        "lowPressurantMass": 0,
         "lowPressurantMassUnit": "kg",
         "endTime": 3,
         "endTimeUnit": "s"

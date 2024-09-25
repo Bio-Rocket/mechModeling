@@ -70,13 +70,29 @@ class Engine:
                 print("Current time: %.3f" % self.simControl.currentTime)
 
             self.simControl.UpdateTime()
-            self.oxTank.RemoveLiquidMass(self.parameters.oxMassFlow, self.simControl.timeStep)
 
-            self.pressTank.RemoveGasMass(self.parameters.oxMassFlow, self.simControl.timeStep, self.oxTank.liquid)
+            if self.simControl.currentTime > self.endConditions.endTime:
+                endReached = True
+                print("Simulation terminated. Reached end time.")
+                break
+                
+            self.oxTank.RemoveLiquidMass(self.parameters.oxMassFlow, self.simControl.timeStep)
 
             if self.oxTank.liquid.mass <= self.endConditions.lowOxMass:
                 endReached = True
+                print("Simulation terminated. Ran out of oxidizer.")
                 break
+
+            self.oxTank.RemoveLiquidEnergy(self.parameters.oxMassFlow, self.simControl.timeStep)
+
+            self.pressTank.RemoveGasMass(self.parameters.oxMassFlow, self.simControl.timeStep, self.oxTank.liquid)
+
+            if self.pressTank.gas.mass <= self.endConditions.lowPressurantMass:
+                endReached = True
+                print("Simulation terminated. Ran out of pressurant.")
+                break
+
+            self.pressTank.RemoveGasEnergy(self.simControl.timeStep)
 
             self.Log()
             
