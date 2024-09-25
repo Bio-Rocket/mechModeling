@@ -29,12 +29,10 @@
             "volumeUnit": "L"
         }
     },
-    "flowLine": {
-        "name": "flowLine",
-        "innerDiameter": 0.187,
-        "innerDiameterUnit": "in",
-        "length": 12,
-        "lengthUnit": "in"
+    "nitrousPressurantValve": {
+        "name": "nitrousPressurantValve",
+        "diameter": 0.125,
+        "diameterUnit": "in"
     },
     "endConditions": {
         "lowOxMass": 0,

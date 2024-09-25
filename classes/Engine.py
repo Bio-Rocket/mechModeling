@@ -4,6 +4,7 @@ from classes.EndConditions import *
 from classes.SimControl import *
 from classes.Parameters import *
 from classes.FlowLine import *
+from classes.Orifice import *
 
 import pandas as pd
 import numpy as np
@@ -11,7 +12,7 @@ import numpy as np
 class Engine:
     oxTank = "" #instance of class Oxtank
     pressTank = "" #instance of class PressTank
-    flowLine = "" #instance of class FlowLine
+    nitrousPressurantValve = "" #instance of class Orifice
 
     endConditions = "" #instance of class EndConditions
     simControl = "" #instance of class simControl
@@ -28,11 +29,11 @@ class Engine:
         self.pressTank = PressTank()
         self.pressTank.Load(dic["pressTank"])
 
-        self.flowLine = FlowLine()
-        self.flowLine.Load(dic["flowLine"])
-        self.flowLine.inlet = self.pressTank.gas
+        self.nitrousPressurantValve = Orifice()
+        self.nitrousPressurantValve.Load(dic["nitrousPressurantValve"])
+        self.nitrousPressurantValve.inlet = self.pressTank.gas
         #This will need to be changed once a gas state is added to the ox tank.
-        self.flowLine.outlet = self.oxTank.liquid
+        self.nitrousPressurantValve.outlet = self.oxTank.liquid
 
         self.endConditions = EndConditions()
         self.endConditions.Load(dic["endConditions"])
@@ -48,13 +49,13 @@ class Engine:
     def InitLog(self):
         self.oxTank.InitLog(self.log, "engine")
         self.pressTank.InitLog(self.log, "engine")
-        self.flowLine.InitLog(self.log, "engine")
+        self.nitrousPressurantValve.InitLog(self.log, "engine")
         self.simControl.InitLog(self.log)
 
     def Log(self):
         self.log = pd.concat([self.log, pd.DataFrame([{col: None for col in self.log.columns}])], ignore_index=True)
         self.oxTank.Log(self.log, "engine")
-        self.flowLine.Log(self.log, "engine")
+        self.nitrousPressurantValve.Log(self.log, "engine")
         self.pressTank.Log(self.log, "engine")
         self.simControl.Log(self.log)
 
@@ -71,12 +72,14 @@ class Engine:
         print("Running simulation...")
 
         self.pressTank.CalcGassMassFlow(self.parameters.oxMassFlow, self.oxTank.liquid)
-        self.flowLine.UpdateFlowLine(self.pressTank.pressurantMassFlowRate)
+        self.nitrousPressurantValve.CalcMassFlow()
 
         self.Log()
         endReached = False
 
         while not endReached:
+
+            self.nitrousPressurantValve.CalcMassFlow()
 
             if int( self.simControl.currentTime * (1 / self.simControl.timeStep)) % 100 == 0:
                 print("Current time: %.3f" % self.simControl.currentTime)
