@@ -112,6 +112,6 @@ class Engine:
             self.Log()
             
             #set to True to run only once, for testing
-            endReached = True
+            #endReached = True
 
         self.log.to_csv("log.csv")

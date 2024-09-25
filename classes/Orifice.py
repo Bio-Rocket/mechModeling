@@ -43,12 +43,19 @@ class Orifice:
         self.pressureRatio = self.inlet.pressure / self.outlet.pressure
         gammaTerm = ((gamma + 1) / 2) ** (gamma / (gamma - 1))
 
+        T01 = 288.15
+        P01 = 39989592.300560005
+        rho01 = 374.3882243409955
+
         if self.pressureRatio > gammaTerm:
             self.choked = True
-            gammaTerm = math.sqrt(gamma)*( ((gamma + 1)/2) ** (-(gamma + 1) /(2 * (gamma - 1))))
-
-            self.massFlowRate = (self.inlet.pressure * self.area / math.sqrt(R * self.inlet.temperature)) * gammaTerm
+            self.massFlowRate = ((rho01/(P01 ** (1/gamma)))* ((2/(gamma + 1)) ** (1/(gamma - 1))))*self.area*(math.sqrt(((2 * gamma)*(P01 ** (1/ gamma)))/((gamma + 1) * rho01)))*(self.inlet.pressure ** ((gamma + 1)/(2* gamma)))
+            #equation 3.33 of Theo & Keith
+            
         else:
             self.choked = False
+            self.massFlowRate = (rho01 * ((self.outlet.pressure / P01) ** (1 / gamma))) * self.area * math.sqrt(((2 * gamma) / (gamma - 1)) * (self.inlet.pressure / (rho01 * ((self.inlet.pressure / P01) ** (1 / gamma)))) * (1 - ((self.outlet.pressure / self.inlet.pressure) ** ((gamma - 1) / (gamma)))))
+            #equation 3.42 of Theo & Keith
+            
 
     

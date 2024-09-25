@@ -16,7 +16,7 @@
     },
     "pressTank": {
         "name": "pressTank",
-        "volume": 4.196760517,
+        "volume": 5,
         "volumeUnit": "L",
         "gas": {
             "name": "gas",
@@ -25,7 +25,7 @@
             "temperatureUnit": "C",
             "pressure": 5800,
             "pressureUnit": "psi",
-            "volume": 4.196760517,
+            "volume": 5,
             "volumeUnit": "L"
         }
     },
