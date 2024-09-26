@@ -23,6 +23,9 @@ def convertToSI(value, unit, dim):
     elif dim == "time":
         if unit == "s":
             return value
+
+        elif unit == "ms":
+            return value / 1000
         
         else:
             raise ValueError("Unsupported time unit type.")

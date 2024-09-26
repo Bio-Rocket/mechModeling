@@ -1,5 +1,6 @@
 from functions.units import *
 from classes.State import *
+from classes.Control import *
 import math
 
 class Orifice:
@@ -15,6 +16,7 @@ class Orifice:
 
     inlet = "" #An instance of class state representing the fluid at the inlet.
     outlet = "" #An instance of class state representing the fluid at the outlet.
+    controller = "" #An instance of class Control representing the control logic implemented on the valve.
 
     def __init__(self):
         pass
@@ -24,38 +26,49 @@ class Orifice:
         self.diameter = convertToSI(dic["diameter"], dic["diameterUnit"], "length")
         self.area = math.pi * self.diameter ** 2 / 4
 
+        self.controller = Control()
+        self.controller.Load(dic["controller"])
+
     def InitLog(self, log, name):
         name += "." + self.name
         log[name + ".pressureRatio"] = pd.Series(dtype='float64')
         log[name + ".choked"] = pd.Series(dtype='str')
         log[name + ".massFlowRate"] = pd.Series(dtype='str')
+        self.controller.InitLog(log, name)
         
     def Log(self, log, name):
         name += "." + self.name
         log[name +".pressureRatio"].iat[-1] = self.pressureRatio
         log[name +".choked"].iat[-1] = str(self.choked)
         log[name +".massFlowRate"].iat[-1] = str(self.massFlowRate)
+        self.controller.Log(log, name)
 
-    def CalcMassFlow(self):
-        gamma = cp.PropsSI('Cpmass', 'P', self.inlet.pressure, 'T', self.inlet.temperature, self.inlet.fluid) / cp.PropsSI('Cvmass', 'P', self.inlet.pressure, 'T', self.inlet.temperature, self.inlet.fluid)
-        R = cp.PropsSI('GAS_CONSTANT', self.inlet.fluid) / cp.PropsSI('MOLAR_MASS', self.inlet.fluid)
+    def CalcMassFlow(self, currentTime):
+        self.controller.DetermineState(self.outlet.pressure, currentTime)
 
-        self.pressureRatio = self.inlet.pressure / self.outlet.pressure
-        gammaTerm = ((gamma + 1) / 2) ** (gamma / (gamma - 1))
+        if self.controller.opened:
+            gamma = cp.PropsSI('Cpmass', 'P', self.inlet.pressure, 'T', self.inlet.temperature, self.inlet.fluid) / cp.PropsSI('Cvmass', 'P', self.inlet.pressure, 'T', self.inlet.temperature, self.inlet.fluid)
+            R = cp.PropsSI('GAS_CONSTANT', self.inlet.fluid) / cp.PropsSI('MOLAR_MASS', self.inlet.fluid)
 
-        T01 = 288.15
-        P01 = 39989592.300560005
-        rho01 = 374.3882243409955
+            self.pressureRatio = self.inlet.pressure / self.outlet.pressure
+            gammaTerm = ((gamma + 1) / 2) ** (gamma / (gamma - 1))
 
-        if self.pressureRatio > gammaTerm:
-            self.choked = True
-            self.massFlowRate = ((rho01/(P01 ** (1/gamma)))* ((2/(gamma + 1)) ** (1/(gamma - 1))))*self.area*(math.sqrt(((2 * gamma)*(P01 ** (1/ gamma)))/((gamma + 1) * rho01)))*(self.inlet.pressure ** ((gamma + 1)/(2* gamma)))
-            #equation 3.33 of Theo & Keith
-            
+            T01 = self.initial.temperature
+            P01 = self.initial.pressure
+            rho01 = self.initial.density
+
+            if self.pressureRatio > gammaTerm:
+                self.choked = True
+                self.massFlowRate = ((rho01/(P01 ** (1/gamma)))* ((2/(gamma + 1)) ** (1/(gamma - 1))))*self.area*(math.sqrt(((2 * gamma)*(P01 ** (1/ gamma)))/((gamma + 1) * rho01)))*(self.inlet.pressure ** ((gamma + 1)/(2* gamma)))
+                #equation 3.33 of Theo & Keith
+                
+            else:
+                self.choked = False
+                self.massFlowRate = (rho01 * ((self.outlet.pressure / P01) ** (1 / gamma))) * self.area * math.sqrt(((2 * gamma) / (gamma - 1)) * (self.inlet.pressure / (rho01 * ((self.inlet.pressure / P01) ** (1 / gamma)))) * (1 - ((self.outlet.pressure / self.inlet.pressure) ** ((gamma - 1) / (gamma)))))
+                #equation 3.42 of Theo & Keith
+
         else:
-            self.choked = False
-            self.massFlowRate = (rho01 * ((self.outlet.pressure / P01) ** (1 / gamma))) * self.area * math.sqrt(((2 * gamma) / (gamma - 1)) * (self.inlet.pressure / (rho01 * ((self.inlet.pressure / P01) ** (1 / gamma)))) * (1 - ((self.outlet.pressure / self.inlet.pressure) ** ((gamma - 1) / (gamma)))))
-            #equation 3.42 of Theo & Keith
+            self.massFlowRate = 0
             
 
     

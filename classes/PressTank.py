@@ -7,7 +7,8 @@ class PressTank:
     volume = 0 #total volume of rigid tank, in m3
 
     #variables
-    gas = "" #state object of the liquid phase in the tank
+    gas = "" #state object of the gas phase in the tank
+    initial = "" #state object representing the initial state of the tank.
     pressurantMassFlowRate = ""
 
     def __init__(self):
@@ -15,8 +16,13 @@ class PressTank:
 
     def Load(self, dic):
         self.volume = convertToSI(dic["volume"], dic["volumeUnit"], "volume")
+
         self.gas = State()
         self.gas.Load(dic["gas"])
+
+        self.initial = State()
+        self.initial.Load(dic["gas"])
+        
         self.name = dic["name"]
 
     def InitLog(self, log, name):
