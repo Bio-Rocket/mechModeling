@@ -32,8 +32,7 @@ class Engine:
         self.nitrousPressurantValve = Orifice()
         self.nitrousPressurantValve.Load(dic["nitrousPressurantValve"])
         self.nitrousPressurantValve.inlet = self.pressTank.gas
-        #This will need to be changed once a gas state is added to the ox tank.
-        self.nitrousPressurantValve.outlet = self.oxTank.liquid
+        self.nitrousPressurantValve.outlet = self.oxTank.gas
 
         self.endConditions = EndConditions()
         self.endConditions.Load(dic["endConditions"])

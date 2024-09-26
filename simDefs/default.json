@@ -12,6 +12,14 @@
             "temperatureUnit": "C",
             "pressure": 1350,
             "pressureUnit": "psi"
+        },
+        "gas": {
+            "name": "gas",
+            "fluid": "N2",
+            "temperature": 15,
+            "temperatureUnit": "C",
+            "pressure": 1350,
+            "pressureUnit": "psi"
         }
     },
     "pressTank": {
@@ -39,7 +47,7 @@
         "lowOxMassUnit": "kg",
         "lowPressurantMass": 0,
         "lowPressurantMassUnit": "kg",
-        "endTime": 3,
+        "endTime": 1,
         "endTimeUnit": "s"
     },
     "simControl": {
