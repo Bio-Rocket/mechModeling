@@ -100,16 +100,25 @@ class Engine:
                 break
 
             self.oxTank.RemoveLiquidEnergy(self.parameters.oxMassFlow, self.simControl.timeStep)
+            
+            #assuming pressure stays constant (due to active pressure control), update other properties
+            self.oxTank.liquid.SetIntrinsicProperties("pressure", self.oxTank.liquid.pressure, "internalEnergy", self.oxTank.liquid.internalEnergy)
+            self.oxTank.liquid.SetExtrinsicProperties("mass", self.oxTank.liquid.mass)
 
-            self.pressTank.RemoveGasMass(self.parameters.oxMassFlow, self.simControl.timeStep, self.oxTank.liquid)
+            self.pressTank.CalcGassMassFlow(self.parameters.oxMassFlow, self.oxTank.liquid)
+            self.pressTank.RemoveGasMass(self.pressTank.pressurantMassFlowRate, self.simControl.timeStep)
 
             if self.pressTank.gas.mass <= self.endConditions.lowPressurantMass:
                 endReached = True
                 print("Simulation terminated. Ran out of pressurant.")
                 break
 
-            self.pressTank.RemoveGasEnergy(self.simControl.timeStep)
-
+            self.pressTank.RemoveGasEnergy(self.pressTank.pressurantMassFlowRate, self.simControl.timeStep)
+            
+            #using constant volume, new mass, and new internal energy, find other properties
+            self.pressTank.gas.SetIntrinsicProperties("density", self.pressTank.gas.mass/self.pressTank.gas.volume, "internalEnergy", self.pressTank.gas.internalEnergy)
+            
+            #update the log
             self.Log()
             
             #set to True to run only once, for testing
@@ -141,7 +150,7 @@ class Engine:
 
             self.nitrousPressurantValve.CalcMassFlow()
 
-            #log sim progress every 100 timeSteps.
+            #print sim progress to terminal every 100 timeSteps.
             if int( self.simControl.currentTime * (1 / self.simControl.timeStep)) % 100 == 0:
                 print("Current time: %.3f" % self.simControl.currentTime)
 

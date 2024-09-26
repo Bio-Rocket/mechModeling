@@ -50,7 +50,4 @@ class OxTank:
         u1 = self.liquid.internalEnergy
 
         u2 = (m1 * u1 - deltaM * hOut) / m2
-        
-        #assuming pressure stays constant (due to active pressure control), update other properties
-        self.liquid.SetIntrinsicProperties("pressure", self.liquid.pressure, "internalEnergy", u2)
-        self.liquid.SetExtrinsicProperties("mass", self.liquid.mass)
+        self.liquid.internalEnergy = u2

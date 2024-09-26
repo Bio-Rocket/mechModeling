@@ -22,7 +22,7 @@ class PressTank:
 
         self.initial = State()
         self.initial.Load(dic["gas"])
-        
+
         self.name = dic["name"]
 
     def InitLog(self, log, name):
@@ -35,26 +35,24 @@ class PressTank:
         log[name +".pressurantMassFlowRate"].iat[-1] = self.pressurantMassFlowRate
         self.gas.Log(log, name)
 
+    #calculates gas mass flow rate required to keep ullage pressure in oxTank constant
     def CalcGassMassFlow(self, oxMassFlowRate, liquidOx):
         oxVolumeFlow = oxMassFlowRate / liquidOx.density
         pressurantDensity = cp.PropsSI('D', 'P', liquidOx.pressure, 'T', liquidOx.temperature, self.gas.fluid)
         self.pressurantMassFlowRate = pressurantDensity * oxVolumeFlow
 
-    def RemoveGasMass(self, oxMassFlowRate, timeStep, liquidOx):
-        self.CalcGassMassFlow(oxMassFlowRate, liquidOx)
-        self.gas.mass -= self.pressurantMassFlowRate * timeStep
+    def RemoveGasMass(self, massFlowRate, timeStep):
+        self.gas.mass -= massFlowRate * timeStep
 
-    def RemoveGasEnergy(self, timeStep):
+    def RemoveGasEnergy(self, massFlowRate, timeStep):
         #assuming no heat transfer or work done, no mass in, negligible changes in K.E., P.E. 
         #applying conservation of energy gives:
         #deltaM*h_out +m2*u2 - m1*u1 = 0
         m2 = self.gas.mass
-        m1 = m2 + self.pressurantMassFlowRate * timeStep
+        m1 = m2 + massFlowRate * timeStep
         deltaM = m1 - m2
         hOut = cp.PropsSI('H', 'P', self.gas.pressure, 'T', self.gas.temperature, self.gas.fluid)
         u1 = self.gas.internalEnergy
 
         u2 = (m1 * u1 - deltaM * hOut) / m2
-
-        #using constant volume, new mass, and new internal energy, find other properties
-        self.gas.SetIntrinsicProperties("density", self.gas.mass/self.gas.volume, "internalEnergy", u2)
+        self.gas.internalEnergy = u2
