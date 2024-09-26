@@ -3,13 +3,17 @@ from classes.PressTank import *
 from classes.EndConditions import *
 from classes.SimControl import *
 from classes.Parameters import *
+from classes.FlowLine import *
+from classes.Orifice import *
 
 import pandas as pd
 import numpy as np
 
 class Engine:
     oxTank = "" #instance of class Oxtank
-    pressTank = '' #instance of class PressTank
+    pressTank = "" #instance of class PressTank
+    nitrousPressurantValve = "" #instance of class Orifice
+
     endConditions = "" #instance of class EndConditions
     simControl = "" #instance of class simControl
     parameters = "" #instance of class parameters
@@ -25,6 +29,11 @@ class Engine:
         self.pressTank = PressTank()
         self.pressTank.Load(dic["pressTank"])
 
+        self.nitrousPressurantValve = Orifice()
+        self.nitrousPressurantValve.Load(dic["nitrousPressurantValve"])
+        self.nitrousPressurantValve.inlet = self.pressTank.gas
+        self.nitrousPressurantValve.outlet = self.oxTank.gas
+
         self.endConditions = EndConditions()
         self.endConditions.Load(dic["endConditions"])
 
@@ -39,11 +48,13 @@ class Engine:
     def InitLog(self):
         self.oxTank.InitLog(self.log, "engine")
         self.pressTank.InitLog(self.log, "engine")
+        self.nitrousPressurantValve.InitLog(self.log, "engine")
         self.simControl.InitLog(self.log)
 
     def Log(self):
         self.log = pd.concat([self.log, pd.DataFrame([{col: None for col in self.log.columns}])], ignore_index=True)
         self.oxTank.Log(self.log, "engine")
+        self.nitrousPressurantValve.Log(self.log, "engine")
         self.pressTank.Log(self.log, "engine")
         self.simControl.Log(self.log)
 
@@ -60,28 +71,46 @@ class Engine:
         print("Running simulation...")
 
         self.pressTank.CalcGassMassFlow(self.parameters.oxMassFlow, self.oxTank.liquid)
+        self.nitrousPressurantValve.CalcMassFlow()
 
         self.Log()
         endReached = False
 
         while not endReached:
 
+            self.nitrousPressurantValve.CalcMassFlow()
+
             if int( self.simControl.currentTime * (1 / self.simControl.timeStep)) % 100 == 0:
                 print("Current time: %.3f" % self.simControl.currentTime)
 
             self.simControl.UpdateTime()
-            self.oxTank.RemoveLiquidMass(self.parameters.oxMassFlow, self.simControl.timeStep)
 
-            self.pressTank.RemoveGasMass(self.parameters.oxMassFlow, self.simControl.timeStep, self.oxTank.liquid)
+            if self.simControl.currentTime > self.endConditions.endTime:
+                endReached = True
+                print("Simulation terminated. Reached end time.")
+                break
+
+            self.oxTank.RemoveLiquidMass(self.parameters.oxMassFlow, self.simControl.timeStep)
 
             if self.oxTank.liquid.mass <= self.endConditions.lowOxMass:
                 endReached = True
+                print("Simulation terminated. Ran out of oxidizer.")
                 break
+
+            self.oxTank.RemoveLiquidEnergy(self.parameters.oxMassFlow, self.simControl.timeStep)
+
+            self.pressTank.RemoveGasMass(self.parameters.oxMassFlow, self.simControl.timeStep, self.oxTank.liquid)
+
+            if self.pressTank.gas.mass <= self.endConditions.lowPressurantMass:
+                endReached = True
+                print("Simulation terminated. Ran out of pressurant.")
+                break
+
+            self.pressTank.RemoveGasEnergy(self.simControl.timeStep)
 
             self.Log()
             
             #set to True to run only once, for testing
-            if self.simControl.currentTime >= 0.3:
-                endReached = True
+            #endReached = True
 
         self.log.to_csv("log.csv")

@@ -12,11 +12,19 @@
             "temperatureUnit": "C",
             "pressure": 1350,
             "pressureUnit": "psi"
+        },
+        "gas": {
+            "name": "gas",
+            "fluid": "N2",
+            "temperature": 15,
+            "temperatureUnit": "C",
+            "pressure": 1350,
+            "pressureUnit": "psi"
         }
     },
     "pressTank": {
         "name": "pressTank",
-        "volume": 4.196760517,
+        "volume": 5,
         "volumeUnit": "L",
         "gas": {
             "name": "gas",
@@ -25,16 +33,21 @@
             "temperatureUnit": "C",
             "pressure": 5800,
             "pressureUnit": "psi",
-            "volume": 4.196760517,
+            "volume": 5,
             "volumeUnit": "L"
         }
+    },
+    "nitrousPressurantValve": {
+        "name": "nitrousPressurantValve",
+        "diameter": 0.125,
+        "diameterUnit": "in"
     },
     "endConditions": {
         "lowOxMass": 0,
         "lowOxMassUnit": "kg",
-        "lowPressurantMass": 0.528,
+        "lowPressurantMass": 0,
         "lowPressurantMassUnit": "kg",
-        "endTime": 3,
+        "endTime": 1,
         "endTimeUnit": "s"
     },
     "simControl": {

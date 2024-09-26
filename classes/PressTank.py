@@ -38,8 +38,6 @@ class PressTank:
         self.CalcGassMassFlow(oxMassFlowRate, liquidOx)
         self.gas.mass -= self.pressurantMassFlowRate * timeStep
 
-        self.RemoveGasEnergy(timeStep)
-
     def RemoveGasEnergy(self, timeStep):
         #assuming no heat transfer or work done, no mass in, negligible changes in K.E., P.E. 
         #applying conservation of energy gives:
@@ -53,8 +51,4 @@ class PressTank:
         u2 = (m1 * u1 - deltaM * hOut) / m2
 
         #using constant volume, new mass, and new internal energy, find other properties
-        self.gas.density = self.gas.mass / self.gas.volume
-        self.gas.internalEnergy = u2
-        self.gas.temperature = cp.PropsSI('T', 'D', self.gas.density, 'U', self.gas.internalEnergy, self.gas.fluid)
-        self.gas.enthalpy = cp.PropsSI('H', 'D', self.gas.density, 'U', self.gas.internalEnergy, self.gas.fluid)
-        self.gas.pressure = cp.PropsSI('P', 'D', self.gas.density, 'U', self.gas.internalEnergy, self.gas.fluid)
+        self.gas.SetIntrinsicProperties("density", self.gas.mass/self.gas.volume, "internalEnergy", u2)

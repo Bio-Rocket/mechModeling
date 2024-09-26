@@ -47,6 +47,22 @@ def convertToSI(value, unit, dim):
         else:
             raise ValueError("Unsupported pressure unit type.")
 
+    elif dim == "length":
+        if unit == "m":
+            return value
+        
+        elif unit == "in":
+            return value / 39.37
+
+        elif unit == "mm":
+            return value / 1000
+
+        elif unit == "cm":
+            return value / 100
+
+        else:
+            raise ValueError("Unsupported length unit type.")
+
     else:
         raise ValueError("Unsupported dimension type.")
 
