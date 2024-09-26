@@ -136,3 +136,18 @@ class State:
             except:
                 pass
 
+    def RemoveMass(self, massFlowRate, timeStep):
+        self.mass -= massFlowRate * timeStep
+
+    def RemoveEnergy(self, massFlowRate, timeStep):
+        #assuming no heat transfer or work done, no mass in, negligible changes in K.E., P.E. 
+        #applying conservation of energy gives:
+        #deltaM*h_out +m2*u2 - m1*u1 = 0
+        m2 = self.mass
+        m1 = m2 + massFlowRate * timeStep
+        deltaM = m1 - m2
+        hOut = cp.PropsSI('H', 'P', self.pressure, 'T', self.temperature, self.fluid)
+        u1 = self.internalEnergy
+
+        u2 = (m1 * u1 - deltaM * hOut) / m2
+        self.internalEnergy = u2

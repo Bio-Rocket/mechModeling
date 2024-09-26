@@ -92,28 +92,28 @@ class Engine:
                 print("Simulation terminated. Reached end time.")
                 break
 
-            self.oxTank.RemoveLiquidMass(self.parameters.oxMassFlow, self.simControl.timeStep)
+            self.oxTank.liquid.RemoveMass(self.parameters.oxMassFlow, self.simControl.timeStep)
 
             if self.oxTank.liquid.mass <= self.endConditions.lowOxMass:
                 endReached = True
                 print("Simulation terminated. Ran out of oxidizer.")
                 break
 
-            self.oxTank.RemoveLiquidEnergy(self.parameters.oxMassFlow, self.simControl.timeStep)
+            self.oxTank.liquid.RemoveEnergy(self.parameters.oxMassFlow, self.simControl.timeStep)
             
             #assuming pressure stays constant (due to active pressure control), update other properties
             self.oxTank.liquid.SetIntrinsicProperties("pressure", self.oxTank.liquid.pressure, "internalEnergy", self.oxTank.liquid.internalEnergy)
             self.oxTank.liquid.SetExtrinsicProperties("mass", self.oxTank.liquid.mass)
 
             self.pressTank.CalcGassMassFlow(self.parameters.oxMassFlow, self.oxTank.liquid)
-            self.pressTank.RemoveGasMass(self.pressTank.pressurantMassFlowRate, self.simControl.timeStep)
+            self.pressTank.gas.RemoveMass(self.pressTank.pressurantMassFlowRate, self.simControl.timeStep)
 
             if self.pressTank.gas.mass <= self.endConditions.lowPressurantMass:
                 endReached = True
                 print("Simulation terminated. Ran out of pressurant.")
                 break
 
-            self.pressTank.RemoveGasEnergy(self.pressTank.pressurantMassFlowRate, self.simControl.timeStep)
+            self.pressTank.gas.RemoveEnergy(self.pressTank.pressurantMassFlowRate, self.simControl.timeStep)
             
             #using constant volume, new mass, and new internal energy, find other properties
             self.pressTank.gas.SetIntrinsicProperties("density", self.pressTank.gas.mass/self.pressTank.gas.volume, "internalEnergy", self.pressTank.gas.internalEnergy)

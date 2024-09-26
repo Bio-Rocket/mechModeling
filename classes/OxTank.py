@@ -35,19 +35,3 @@ class OxTank:
         name += "." + self.name
         self.liquid.Log(log, name)
         self.gas.Log(log, name)
-
-    def RemoveLiquidMass(self, massFlowRate, timeStep):
-        self.liquid.mass -= massFlowRate * timeStep
-
-    def RemoveLiquidEnergy(self, massFlowRate, timeStep):
-        #assuming no heat transfer or work done, no mass in, negligible changes in K.E., P.E. 
-        #applying conservation of energy gives:
-        #deltaM*h_out +m2*u2 - m1*u1 = 0
-        m2 = self.liquid.mass
-        m1 = m2 + massFlowRate * timeStep
-        deltaM = m1 - m2
-        hOut = cp.PropsSI('H', 'P', self.liquid.pressure, 'T', self.liquid.temperature, self.liquid.fluid)
-        u1 = self.liquid.internalEnergy
-
-        u2 = (m1 * u1 - deltaM * hOut) / m2
-        self.liquid.internalEnergy = u2
