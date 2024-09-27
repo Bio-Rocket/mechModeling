@@ -108,6 +108,43 @@ class State:
             except:
                 pass
 
+        #Option 2: Set intrinsic property values using enthalpy and density
+        elif prop1 == "enthalpy" and prop2 == "density":
+            self.enthalpy = value1
+            self.density = value2
+
+            self.temperature = cp.PropsSI('T', 'H', self.enthalpy, 'D', self.density, self.fluid)
+            self.pressure = cp.PropsSI('P', 'H', self.enthalpy, 'D', self.density, self.fluid)
+            self.internalEnergy = cp.PropsSI('U', 'H', self.enthalpy, 'D', self.density, self.fluid)
+            self.sonicVelocity = cp.PropsSI('A', 'H', self.enthalpy, 'D', self.density, self.fluid)
+            self.entropy = cp.PropsSI('S', 'H', self.enthalpy, 'D', self.density, self.fluid)
+
+            #CoolProp does not have a model for dynamic viscosity of nitrous.
+            try:
+                self.dynamicViscosity = cp.PropsSI('V', 'H', self.enthalpy, 'D', self.density, self.fluid)
+
+            except:
+                pass
+
+        #Option 3: Set intrinsic property values using density and pressure
+        elif prop1 == "density" and prop2 == "pressure":
+            self.density = value1
+            self.pressure = value2
+
+            self.temperature = cp.PropsSI('T', 'D', self.density, 'P', self.pressure, self.fluid)
+            self.enthalpy = cp.PropsSI('H', 'D', self.density, 'P', self.pressure, self.fluid)
+            self.internalEnergy = cp.PropsSI('U', 'D', self.density, 'P', self.pressure, self.fluid)
+            self.sonicVelocity = cp.PropsSI('A', 'D', self.density, 'P', self.pressure, self.fluid)
+            self.entropy = cp.PropsSI('S', 'D', self.density, 'P', self.pressure, self.fluid)
+
+            #CoolProp does not have a model for dynamic viscosity of nitrous.
+            try:
+                self.dynamicViscosity = cp.PropsSI('V', 'D', self.density, 'P', self.pressure, self.fluid)
+
+            except:
+                pass
+
+        #Option 4: Set intrinsic property values using pressure and internal energy
         elif prop1 == "pressure" and prop2 == "internalEnergy":
             self.pressure = value1
             self.internalEnergy = value2
@@ -125,6 +162,7 @@ class State:
             except:
                 pass
 
+        #Option 5: Set intrinsic property values using density and internal energy
         elif prop1 == "density" and prop2 == "internalEnergy":
             self.density = value1
             self.internalEnergy = value2
@@ -142,6 +180,7 @@ class State:
             except:
                 pass
 
+        #Option 6: Set intrinsic property values using internal energy and entropy
         #note, as of V 6.6, coolprop does not yet support this pair of inputs.
         elif prop1 == "internalEnergy" and prop2 == "entropy":
             self.internalEnergy = value1
@@ -175,7 +214,7 @@ class State:
         return u2
 
     def AddMass(self, massFlowRate, timeStep):
-        self.mass += massFlowRate * timeStep
+        return self.mass + massFlowRate * timeStep
 
     #requires inlet enthalpy, if undefined, assume equal to enthalpy of this state
     def AddEnergy(self, massFlowRate, timeStep, hIn=enthalpy):
@@ -184,7 +223,7 @@ class State:
         deltaM = m2 - m1
         u1 = self.internalEnergy
 
-        u2 = (m1 * u1 - deltaM * hIn) / m2
+        u2 = (m1 * u1 + deltaM * hIn) / m2
         return u2
 
     def RemoveEntropy(self, massFlowRate, timeStep):
@@ -198,7 +237,7 @@ class State:
         s2 = (deltaM * self.entropy + m1 * self.entropy) / m2
         return s2
 
-    def IstentropicVolumeChange(self, V2):
+    def IsentropicVolumeChange(self, V2):
         V1 = self.volume
         P1 = self.pressure
         T1 = self.temperature
@@ -206,3 +245,10 @@ class State:
         P2 = P1 * ((V1 / V2) ** gamma)
         T2 = T1 * ( (P2 / P1) ** ((gamma - 1) / gamma))
         return P2, T2
+
+    def IsentropicPressureChange(self, P2):
+        P1 = self.pressure
+        T1 = self.temperature
+        gamma = cp.PropsSI('Cpmass', 'P', self.pressure, 'T', self.temperature, self.fluid) / cp.PropsSI('Cvmass', 'P', self.pressure, 'T', self.temperature, self.fluid)
+        T2 = T1 * ( (P2 / P1) ** ((gamma - 1) / gamma))
+        return T2

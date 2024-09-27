@@ -153,8 +153,9 @@ class Engine:
             self.nitrousPressurantValve.CalcMassFlow(self.simControl.currentTime)
 
             #print sim status to console every 100 time steps.
-            if int( self.simControl.currentTime * (1 / self.simControl.timeStep)) % 100 == 0:
+            if int( self.simControl.currentTime * (1 / self.simControl.timeStep)) % 50 == 0:
                 print("Current time: %.3f" % self.simControl.currentTime)
+                self.log.to_csv("log.csv")
 
             #move to the next time step in the simulation.
             self.simControl.UpdateTime()
@@ -164,6 +165,12 @@ class Engine:
                 endReached = True
                 print("Simulation terminated. Reached end time.")
                 break
+
+            '''
+            ################################################################
+            #####################DRAINING OXIDIZER TANK#####################
+            ################################################################
+            '''
 
             #calculate the liquid mass at the next timeStep. 
             m = self.oxTank.liquid.RemoveMass(self.parameters.oxMassFlow, self.simControl.timeStep)
@@ -177,43 +184,45 @@ class Engine:
             #calculate the specific internal energy at the new timeStep by enforcing conservation of energy
             u = self.oxTank.liquid.RemoveEnergy(self.parameters.oxMassFlow, self.simControl.timeStep)
             
-            #Start iterative solver to find nitrous volume
+            #Start iterative solver to find nitrous volume given a new liquid nitrous mass
+            def RemoveOxDensity(mOx):
+                #Use bisection algorithm
+                
+                #The minimum volume nitrous could occupy is given by the case where the pressure of nitrous is equal to the nitrogen tank pressure
+                a = mOx / cp.PropsSI('D', 'U', self.oxTank.liquid.internalEnergy, 'P', self.pressTank.gas.pressure, self.oxTank.liquid.fluid)
 
-            #The minimum volume nitrous could occupy is given by the case where the pressure of nitrous is equal to the nitrogen tank pressure
-            a = m / cp.PropsSI('D', 'U', self.oxTank.liquid.internalEnergy, 'P', self.pressTank.gas.pressure, self.oxTank.liquid.fluid)
-
-            #The maximum volume nitrous could occupy is given by the case where the pressure of nitrogen is equal to the nitrogen tank pressure.
-            b = self.oxTank.volume - ( ( self.oxTank.gas.mass * self.oxTank.gas.R * self.oxTank.gas.temperature ) / self.pressTank.gas.pressure )
-            c = (a + b) / 2
-
-            def Pressure(VNOS):
-                PN2 = self.oxTank.gas.mass * self.oxTank.gas.R * self.oxTank.gas.temperature / (self.oxTank.volume - VNOS)
-                PNOS = cp.PropsSI('P', 'U', self.oxTank.liquid.internalEnergy, 'D', m / VNOS, self.oxTank.liquid.fluid)
-                return PN2 - PNOS
-
-            iterations = 0
-            while True:
-                iterations += 1
-                fa = Pressure(a)
-                fc = Pressure(c)
-
-                if fa * fc < 0:
-                    b = c
-
-                else:
-                    a = c
-
+                #The maximum volume nitrous could occupy is given by the case where the pressure of nitrogen is equal to the nitrogen tank pressure.
+                b = self.oxTank.volume - ( ( self.oxTank.gas.mass * self.oxTank.gas.R * self.oxTank.gas.temperature ) / self.pressTank.gas.pressure )
                 c = (a + b) / 2
 
-                if iterations > 100:
-                    break
+                #assuming a volume occupied by the liquid nitrous phase, return the difference between nitrogen and nitrous prressures.
+                def Pressure(VNOS):
+                    PN2, TN2 = self.oxTank.gas.IsentropicVolumeChange(self.oxTank.volume - VNOS)
+                    PNOS = cp.PropsSI('P', 'U', self.oxTank.liquid.internalEnergy, 'D', mOx / VNOS, self.oxTank.liquid.fluid)
+                    return PN2 - PNOS
 
-                if abs(Pressure(a) - Pressure(b)) < 70:
-                    break
+                iterations = 0
+                while True:
+                    iterations += 1
+                    fa = Pressure(a)
+                    fc = Pressure(c)
 
-            rho = m / c
+                    if fa * fc < 0:
+                        b = c
 
-            #update the intrinsic properties of the liquid phae in the oxidizer tank using the new internal energy and density
+                    else:
+                        a = c
+
+                    c = (a + b) / 2
+
+                    if abs(Pressure(a) - Pressure(b)) < 70:
+                        break
+
+                return mOx / c
+
+            rho = RemoveOxDensity(m)
+
+            #update the intrinsic properties of the liquid phase in the oxidizer tank using the new internal energy and density
             self.oxTank.liquid.SetIntrinsicProperties("density", rho, "internalEnergy", u)
 
             #update the extrinsic properties of the liquid phase in the oxidizer tank using the new mass and the above determined density.
@@ -223,7 +232,7 @@ class Engine:
             v = self.oxTank.volume - self.oxTank.liquid.volume
 
             #find the pressure and temperature using isentropic expansion
-            P, T = self.oxTank.gas.IstentropicVolumeChange(v)
+            P, T = self.oxTank.gas.IsentropicVolumeChange(v)
             
             #update the intrinsic properties of the gas phase in the oxidizer tank using the pressure and temperature found from isentropic expansion
             self.oxTank.gas.SetIntrinsicProperties("temperature", T, "pressure", P)
@@ -231,22 +240,91 @@ class Engine:
             #update the extrinsic properties of the gas phase in the oxidizer tank using the new volume
             self.oxTank.gas.SetExtrinsicProperties("volume", v)
 
-            #!!!!!!!!
-            #assuming pressure stays constant (due to active pressure control), update other properties
-            #self.oxTank.liquid.SetIntrinsicProperties("pressure", self.oxTank.liquid.pressure, "internalEnergy", u)
-            #!!!!!!!!
-
-
-
             if self.nitrousPressurantValve.controller.opened:
-                print("Simulation terminated! Pressurant valve opened.")
-                break
-                #TODO: Add N2 mass and energy to the gas phase in the oxidizer tank.
+
+                '''
+                #################################################################
+                ######################FILLING OXIDIZER TANK######################
+                #################################################################
+                '''
+
+                #calculate the mass of the gas phase in the oxidizer tank at the next time step
+                mGas = self.oxTank.gas.AddMass(self.nitrousPressurantValve.massFlowRate, self.simControl.timeStep)
+                
+                #Start iterative solver to find gas volume given a new gas phase mass
+                def AddGasDensity(mGas):
+                    #Use bisection algorithm
+                    
+                    #The minimum volume nitrous could occupy is given by the case where the pressure of nitrous is equal to the nitrogen tank pressure
+                    a = self.oxTank.liquid.mass / cp.PropsSI('D', 'U', self.oxTank.liquid.internalEnergy, 'P', self.pressTank.gas.pressure, self.oxTank.liquid.fluid)
+
+                    #The maximum volume nitrous could occupy is given by the case where the pressure of nitrogen is equal to the nitrogen tank pressure.
+                    b = self.oxTank.volume - ( ( self.oxTank.gas.mass * self.oxTank.gas.R * self.oxTank.gas.temperature ) / self.pressTank.gas.pressure )
+                    c = (a + b) / 2
+
+                    #assuming a volume occupied by the liquid nitrous phase, return the difference between nitrogen and nitrous prressures.
+                    def Pressure(VNOS):
+                        PN2 = mGas * self.oxTank.gas.R * self.oxTank.gas.temperature / (self.oxTank.volume - VNOS)
+                        PNOS = cp.PropsSI('P', 'U', self.oxTank.liquid.internalEnergy, 'D', self.oxTank.liquid.mass / VNOS, self.oxTank.liquid.fluid)
+                        return PN2 - PNOS
+
+                    iterations = 0
+                    while True:
+                        iterations += 1
+                        fa = Pressure(a)
+                        fc = Pressure(c)
+
+                        if fa * fc < 0:
+                            b = c
+
+                        else:
+                            a = c
+
+                        c = (a + b) / 2
+
+                        if abs(Pressure(a) - Pressure(b)) < 50:
+                            break
+
+                    return self.oxTank.liquid.mass / c, mGas * self.oxTank.gas.R * self.oxTank.gas.temperature / (self.oxTank.volume - c)
+
+                #find the new density of the liquid phase in the oxidizer tank
+                rhoNOS, P = AddGasDensity(mGas)
+
+                #update the intrinsic properties of the liquid phase in the oxidizer tank using the new internal energy and density
+                self.oxTank.liquid.SetIntrinsicProperties("density", rhoNOS, "pressure", P)
+
+                #update the extrinsic properties of the liquid phase in the oxidizer tank using the new mass and the above determined density.
+                self.oxTank.liquid.SetExtrinsicProperties("mass", self.oxTank.liquid.mass)
+
+                #This seemed like a more correct way to do it, but it gave really weird results.
+                #find the temperature that the pressurant reaches when it expands to the pressure of the oxidizer tank
+                T = self.pressTank.gas.IsentropicPressureChange(P)
+
+                #find the specific enthalpy at this state
+                H = cp.PropsSI('H', 'P', P, 'T', T, self.pressTank.gas.fluid)
+
+                #use mixing to find the new enthalpy of the phase
+                u = self.oxTank.gas.AddEnergy(self.nitrousPressurantValve.massFlowRate, self.simControl.timeStep, H)
+
+                #find the volume occupied by the gas phase
+                v = self.oxTank.volume - self.oxTank.liquid.volume
+
+                #update the intrinsic properties of the gas phase in the oxTank using the new specific enthalpy and the new density
+                self.oxTank.gas.SetIntrinsicProperties("density", mGas / v, "internalEnergy", u)
+
+                #update the extrinsic properties of the gas phase in the oxTank using the new mass
+                self.oxTank.gas.SetExtrinsicProperties("mass", mGas)
+
+                '''
+                ################################################################
+                ####################DRAINING PRESSURANT TANK####################
+                ################################################################
+                '''
 
                 #calculate the amount of mass removed from the pressurant tank
-                m = self.pressTank.gas.RemoveMass(self.nitrousPressurantValve.massFlowRate, self.simControl.timeStep)
+                mPress = self.pressTank.gas.RemoveMass(self.nitrousPressurantValve.massFlowRate, self.simControl.timeStep)
 
-                if m <= self.endConditions.lowPressurantMass:
+                if mPress <= self.endConditions.lowPressurantMass:
                     endReached = True
                     print("Simulation terminated. Ran out of pressurant.")
                     break
@@ -256,13 +334,13 @@ class Engine:
                     print("Simulation terminated. Pressurant pressure dropped below oxidizer tank pressure.")
                     break
 
-                u = self.pressTank.gas.RemoveEnergy(self.pressTank.pressurantMassFlowRate, self.simControl.timeStep)
+                u = self.pressTank.gas.RemoveEnergy(self.nitrousPressurantValve.massFlowRate, self.simControl.timeStep)
                 
                 #update the intrinsic properties using the fixed volume, the new mass, and the new internal energy
-                self.pressTank.gas.SetIntrinsicProperties("density", m/self.pressTank.gas.volume, "internalEnergy", u)
+                self.pressTank.gas.SetIntrinsicProperties("density", mPress/self.pressTank.gas.volume, "internalEnergy", u)
                 
                 #update the extrinsic properties of the gas in the pressurant tank using the new mass and the density.
-                self.pressTank.SetExtrinsicProperties("mass", m)
+                self.pressTank.gas.SetExtrinsicProperties("mass", mPress)
 
             #update the log
             self.Log()
@@ -270,4 +348,4 @@ class Engine:
             #set to True to run only once, for testing
             #endReached = True
 
-        self.log.to_csv("log2.csv")
+        self.log.to_csv("log.csv")

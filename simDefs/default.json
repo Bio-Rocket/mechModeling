@@ -39,13 +39,13 @@
     },
     "nitrousPressurantValve": {
         "name": "nitrousPressurantValve",
-        "diameter": 0.125,
+        "diameter": 0.25,
         "diameterUnit": "in",
         "controller": {
             "name": "controller",
-            "openDelay": 100,
+            "openDelay": 10,
             "openDelayUnit": "ms",
-            "closeDelay": 100,
+            "closeDelay": 10,
             "closeDelayUnit": "ms",
             "lowThreshold": 1250,
             "lowThresholdUnit": "psi",
@@ -60,7 +60,7 @@
         "lowOxMassUnit": "kg",
         "lowPressurantMass": 0,
         "lowPressurantMassUnit": "kg",
-        "endTime": 1,
+        "endTime": 3,
         "endTimeUnit": "s"
     },
     "simControl": {

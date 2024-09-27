@@ -77,5 +77,5 @@ class Control:
                 #if the valve is being closed already, continue closing it, but check if it has closed fully.
                 else:
                     if currentTime - self.timeCoilCycle > self.closeDelay:
-                        self.open = False
+                        self.opened = False
                         self.timeValveCycled = currentTime
