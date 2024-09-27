@@ -238,7 +238,7 @@ class Engine:
             self.oxTank.gas.SetIntrinsicProperties("temperature", T, "pressure", P)
 
             #update the extrinsic properties of the gas phase in the oxidizer tank using the new volume
-            self.oxTank.gas.SetExtrinsicProperties("volume", v)
+            self.oxTank.gas.SetExtrinsicProperties("mass", self.oxTank.gas.mass)
 
             if self.nitrousPressurantValve.controller.opened:
 
