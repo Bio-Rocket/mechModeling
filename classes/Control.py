@@ -67,7 +67,7 @@ class Control:
         if oxPressure > self.highThreshold:
 
             #if the valve is still open, need to close it. 
-            if self.open:
+            if self.opened:
 
                 #if the valve is open and still energized, de-energize it
                 if self.energized:
