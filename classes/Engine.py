@@ -218,12 +218,13 @@ class Engine:
                     if abs(Pressure(a) - Pressure(b)) < 70:
                         break
 
-                return mOx / c
+                PN2, TN2 = self.oxTank.gas.IsentropicVolumeChange(self.oxTank.volume - c)
+                return mOx / c, PN2
 
-            rho = RemoveOxDensity(m)
+            rho, P = RemoveOxDensity(m)
 
             #update the intrinsic properties of the liquid phase in the oxidizer tank using the new internal energy and density
-            self.oxTank.liquid.SetIntrinsicProperties("density", rho, "internalEnergy", u)
+            self.oxTank.liquid.SetIntrinsicProperties("density", rho, "pressure", P)
 
             #update the extrinsic properties of the liquid phase in the oxidizer tank using the new mass and the above determined density.
             self.oxTank.liquid.SetExtrinsicProperties("mass", m)
@@ -310,7 +311,7 @@ class Engine:
                 v = self.oxTank.volume - self.oxTank.liquid.volume
 
                 #update the intrinsic properties of the gas phase in the oxTank using the new specific enthalpy and the new density
-                self.oxTank.gas.SetIntrinsicProperties("density", mGas / v, "internalEnergy", u)
+                self.oxTank.gas.SetIntrinsicProperties("density", mGas / v, "pressure", P)
 
                 #update the extrinsic properties of the gas phase in the oxTank using the new mass
                 self.oxTank.gas.SetExtrinsicProperties("mass", mGas)
