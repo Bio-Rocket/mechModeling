@@ -15,17 +15,17 @@ dic = LoadJSON("simDefs/defs_oct11.json") # Mass budget values as of Oct. 11, 20
 #      and run plots option only to display data.
 
 RUN_SIM = False
-PLOTS = True
+SHOW_PLOTS = True
 
 if RUN_SIM:
     engine = Engine()
     engine.Load(dic)
     engine.runSim()
 
-if PLOTS:
+if SHOW_PLOTS:
     p = Plotter("log.csv")
     p.load_data()
     #each instance of .plot_columns, a new figure will be displayed
     p.plot_columns(["engine.oxTank.liquid.mass", "engine.oxTank.gas.mass", "engine.pressTank.gas.mass", "engine.fuelTank.liquid.mass"])
-    p.plot_columns(["engine.oxTank.gas.pressure"])
+    p.plot_columns(["engine.oxTank.gas.pressure", "engine.pressTank.gas.pressure", "engine.fuelTank.liquid.pressure"])
     p.show_all()

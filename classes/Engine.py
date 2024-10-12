@@ -265,10 +265,8 @@ class Engine:
             self.fuelTank.liquid.SetIntrinsicProperties("density", self.fuelTank.liquid.density, "pressure", self.fuelTank.liquid.pressure)
             self.fuelTank.liquid.SetExtrinsicProperties("mass", self.fuelTank.liquid.mass)
             
-            self.fuelTank.liquid.RemoveEnergyFuel(self.parameters.oxMassFlow, self.simControl.timeStep, self.oxTank.liquid)
-            #self.fuelTank.liquid.CalcLiquidMassFlow(self.parameters.oxMassFlow, self.parameters.OFRatio, self.oxTank.liquid)
-            #self.fuelTank.liquid.CalcVolumeChange(m, self.simControl.timeStep)
-            
+            #self.fuelTank.liquid.RemoveEnergyFuel(self.parameters.oxMassFlow, self.simControl.timeStep, self.oxTank.liquid)
+
             if self.nitrousPressurantValve.controller.opened:
 
                 '''

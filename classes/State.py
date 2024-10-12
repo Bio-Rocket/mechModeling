@@ -219,9 +219,9 @@ class State:
         #deltaM*h_out +m2*u2 - m1*u1 = Q
         k_bulkhead = 167 #thermal conductivity of Aluminum 6061-T6 in W/m/K
         piston_bulkhead_area = 4 #in m
-        piston_bulkhead_thickness = convertToSI(0.125, "in", "distance") #in m
+        piston_bulkhead_thickness = convertToSI(0.125, "in", "length") #in m
         fueltank_area = 4 #in m, value decrease as volume is depleted
-        fueltank_thickness = convertToSI(0.125, "in", "distance") #in m
+        fueltank_thickness = convertToSI(0.125, "in", "length") #in m
                 
         m2 = self.mass
         m1 = m2 + massFlowRate * timeStep

@@ -60,7 +60,10 @@ class Plotter:
         plt.legend()
         plt.title(f"Plot of {concatenated_columns} vs {time_label}")
         plt.grid(True)
-        
+
+        # Automatically adjust plot to fit labels and title within the figure
+        plt.tight_layout()
+
         # Delay showing the plot until explicitly requested
         if show:
             plt.show()
