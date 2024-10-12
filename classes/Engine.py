@@ -189,7 +189,7 @@ class Engine:
                 break
 
             #calculate the specific internal energy at the new timeStep by enforcing conservation of energy
-            u = self.oxTank.liquid.RemoveEnergy(self.parameters.oxMassFlow, self.simControl.timeStep)
+            self.oxTank.liquid.RemoveEnergy(self.parameters.oxMassFlow, self.simControl.timeStep)
             
             #Start iterative solver to find nitrous volume given a new liquid nitrous mass
             def RemoveOxDensity(mOx):
@@ -208,16 +208,21 @@ class Engine:
                     try:
                         PNOS = cp.PropsSI('P', 'U', self.oxTank.liquid.internalEnergy, 'D', mOx / VNOS, self.oxTank.liquid.fluid)
                     except ValueError as e:
+                        print(f"Concluded Simulation at time = {self.simControl.currentTime:.2f}s due to error.")
                         print(f"Error: {e}")
-                        print(f"NOx mass too low! (Try increasing volume?)")
-                        exit()
+                        print(f"Error: NOx mass too low!")
+                        return
                     return PN2 - PNOS
 
                 iterations = 0
                 while True:
                     iterations += 1
-                    fa = Pressure(a)
-                    fc = Pressure(c)
+                    
+                    try:
+                        fa = Pressure(a)
+                        fc = Pressure(c)
+                    except:
+                        return
 
                     if fa * fc < 0:
                         b = c
@@ -232,8 +237,10 @@ class Engine:
 
                 PN2, TN2 = self.oxTank.gas.IsentropicVolumeChange(self.oxTank.volume - c)
                 return mOx / c, PN2
-
-            rho, P = RemoveOxDensity(m)
+            try:
+                rho, P = RemoveOxDensity(m)
+            except:
+                return
 
             #update the intrinsic properties of the liquid phase in the oxidizer tank using the new internal energy and density
             self.oxTank.liquid.SetIntrinsicProperties("density", rho, "pressure", P)
@@ -258,14 +265,14 @@ class Engine:
             #######################DRAINING FUEL TANK#######################
             ################################################################
             '''
-            # print(self.parameters.OFRatio)
+
             mFlow = self.fuelTank.CalcLiquidMassFlow(self.parameters.oxMassFlow, self.parameters.OFRatio, self.oxTank.liquid)
             self.fuelTank.liquid.mass = self.fuelTank.liquid.RemoveMass(mFlow, self.simControl.timeStep)
-            
+            self.fuelTank.liquid.pressure = self.oxTank.gas.pressure
             self.fuelTank.liquid.SetIntrinsicProperties("density", self.fuelTank.liquid.density, "pressure", self.fuelTank.liquid.pressure)
             self.fuelTank.liquid.SetExtrinsicProperties("mass", self.fuelTank.liquid.mass)
             
-            #self.fuelTank.liquid.RemoveEnergyFuel(self.parameters.oxMassFlow, self.simControl.timeStep, self.oxTank.liquid)
+            #self.fuelTank.liquid.RemoveEnergyFuel(self.parameters.oxMassFlow, self.simControl.timeStep, self.oxTank.liquid, self.parameters.OFRatio)
 
             if self.nitrousPressurantValve.controller.opened:
 

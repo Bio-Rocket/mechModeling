@@ -11,7 +11,7 @@ class Plotter:
         """Loads data from a CSV file."""
         if os.path.exists(self.filename):
             self.data = pd.read_csv(self.filename)
-            print(f"Data loaded from {self.filename}")
+            print(f"[Plotter] Data loaded from \"{self.filename}\"")
         else:
             raise FileNotFoundError(f"{self.filename} does not exist in the directory.")
     

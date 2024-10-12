@@ -2,6 +2,7 @@ from functions.units import *
 import CoolProp.CoolProp as cp
 
 import pandas as pd
+import math as m
 
 class State:
     #constant
@@ -213,27 +214,32 @@ class State:
         u2 = (m1 * self.internalEnergy - deltaM * self.enthalpy) / m2
         return u2
     
-    def RemoveEnergyFuel(self, massFlowRate, timeStep, oxLiquid):
+    def RemoveEnergyFuel(self, massFlowRate, timeStep, oxLiquid, OFRatio):
         #assuming heat transfer and work done, no mass in, negligible changes in K.E., P.E. 
         #applying conservation of energy gives:
         #deltaM*h_out +m2*u2 - m1*u1 = Q
-        k_bulkhead = 167 #thermal conductivity of Aluminum 6061-T6 in W/m/K
-        piston_bulkhead_area = 4 #in m
-        piston_bulkhead_thickness = convertToSI(0.125, "in", "length") #in m
-        fueltank_area = 4 #in m, value decrease as volume is depleted
-        fueltank_thickness = convertToSI(0.125, "in", "length") #in m
-                
+        k_6061 = 167 #thermal conductivity of Aluminum 6061-T6 in W/m/K
+        
+        D = convertToSI(4, "in", "length") #diameter of fuel tank in m
+        fueltank_thickness = convertToSI(0.0625, "in", "length") #thickness of fuel PV in m
+        piston_D = D - 2 * fueltank_thickness #diameter of inner endcap in m
+        piston_endcap_area = piston_D ** 2 / 4 * m.pi #area of inner endcap in m^2
+        
+        piston_endcap_thickness = convertToSI(.6, "in", "length") #thickness of endcap in m        
+        fueltank_height = self.volume / piston_endcap_area
+        fueltank_area = (fueltank_height) * piston_D * m.pi # internal area of tank PV
+        
         m2 = self.mass
-        m1 = m2 + massFlowRate * timeStep
+        m1 = m2 - OFRatio / massFlowRate * timeStep
         deltaM = m1 - m2
 
-        heat_transfer_rate_1 = k_bulkhead * piston_bulkhead_area * (self.temperature - oxLiquid.temperature) / piston_bulkhead_thickness
-        heat_transfer_rate_2 = k_bulkhead * fueltank_area * (self.temperature - oxLiquid.temperature) / fueltank_thickness
+        heat_transfer_rate_1 = k_6061 * piston_endcap_area * (self.temperature - oxLiquid.temperature) / piston_endcap_thickness
+        heat_transfer_rate_2 = k_6061 * fueltank_area * (self.temperature - oxLiquid.temperature) / fueltank_thickness
 
         heat_loss = (heat_transfer_rate_1 + heat_transfer_rate_2)  * timeStep
-
-        u2 = (m1 * self.internalEnergy - deltaM * self.enthalpy - heat_loss) / m2
-        return u2
+        self.internalEnergy = ((m1 * self.internalEnergy - deltaM * self.enthalpy - heat_loss) / m2)
+        self.temperature = cp.PropsSI('T', 'U', self.internalEnergy, 'P', self.pressure, self.fluid)
+        return 
 
     def AddMass(self, massFlowRate, timeStep):
         return self.mass + massFlowRate * timeStep
@@ -280,9 +286,3 @@ class State:
         self.OFRatio = OF
         self.fuelVolumeFlow = oxVolumeFlow / self.OFRatio
         self.fuelMassFlowRate = self.density * self.fuelVolumeFlow
-            
-    def CalcVolumeChange(self, fuelMass, timeStep):
-        v = fuelMass / self.density # volume of fuel in tank
-        #print("1 ", v)
-        #print("2 ", self.volume)
-        self.volume -= self.fuelVolumeFlow * timeStep

@@ -14,7 +14,7 @@ dic = LoadJSON("simDefs/defs_oct11.json") # Mass budget values as of Oct. 11, 20
 #      you can disable sims the second time around 
 #      and run plots option only to display data.
 
-RUN_SIM = False
+RUN_SIM = True
 SHOW_PLOTS = True
 
 if RUN_SIM:
@@ -26,6 +26,13 @@ if SHOW_PLOTS:
     p = Plotter("log.csv")
     p.load_data()
     #each instance of .plot_columns, a new figure will be displayed
+    #mass plot
     p.plot_columns(["engine.oxTank.liquid.mass", "engine.oxTank.gas.mass", "engine.pressTank.gas.mass", "engine.fuelTank.liquid.mass"])
+    
+    #pressure plot
     p.plot_columns(["engine.oxTank.gas.pressure", "engine.pressTank.gas.pressure", "engine.fuelTank.liquid.pressure"])
+    
+    #temperature plot
+    p.plot_columns(["engine.oxTank.gas.temperature", "engine.pressTank.gas.temperature", "engine.fuelTank.liquid.temperature"])
+
     p.show_all()
