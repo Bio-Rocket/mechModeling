@@ -1,5 +1,6 @@
 from classes.OxTank import *
 from classes.PressTank import *
+from classes.FuelTank import *
 from classes.EndConditions import *
 from classes.SimControl import *
 from classes.Parameters import *
@@ -28,6 +29,9 @@ class Engine:
 
         self.pressTank = PressTank()
         self.pressTank.Load(dic["pressTank"])
+        
+        self.fuelTank = FuelTank()
+        self.fuelTank.Load(dic["fuelTank"])
 
         self.nitrousPressurantValve = Orifice()
         self.nitrousPressurantValve.Load(dic["nitrousPressurantValve"])
@@ -51,6 +55,7 @@ class Engine:
         self.oxTank.InitLog(self.log, "engine")
         self.pressTank.InitLog(self.log, "engine")
         self.nitrousPressurantValve.InitLog(self.log, "engine")
+        self.fuelTank.InitLog(self.log, "engine")
 
     def Log(self):
         self.log = pd.concat([self.log, pd.DataFrame([{col: None for col in self.log.columns}])], ignore_index=True)
@@ -59,6 +64,7 @@ class Engine:
         self.oxTank.Log(self.log, "engine")
         self.nitrousPressurantValve.Log(self.log, "engine")
         self.pressTank.Log(self.log, "engine")
+        self.fuelTank.Log(self.log, "engine")
 
     '''
     Summary:
@@ -72,9 +78,10 @@ class Engine:
     def drainTanks(self):
         print("Running simulation...")
 
-        self.pressTank.CalcGassMassFlow(self.parameters.oxMassFlow, self.oxTank.liquid)
+        self.fuelTank.CalcLiquidMassFlow(self.parameters.oxMassFlow, self.oxTank.liquid) # calculates flow rate of fuel from O/F ratio
+        self.pressTank.CalcGasMassFlow(self.parameters.oxMassFlow, self.oxTank.liquid)
         self.nitrousPressurantValve.CalcMassFlow(self.simControl.currentTime)
-
+        
         self.Log()
         endReached = False
 
@@ -105,7 +112,7 @@ class Engine:
             self.oxTank.liquid.SetIntrinsicProperties("pressure", self.oxTank.liquid.pressure, "internalEnergy", u)
             self.oxTank.liquid.SetExtrinsicProperties("mass", m)
 
-            self.pressTank.CalcGassMassFlow(self.parameters.oxMassFlow, self.oxTank.liquid)
+            self.pressTank.CalcGasMassFlow(self.parameters.oxMassFlow, self.oxTank.liquid)
             m = self.pressTank.gas.RemoveMass(self.pressTank.pressurantMassFlowRate, self.simControl.timeStep)
             self.pressTank.gas.SetExtrinsicProperties("mass", m)
 
@@ -198,7 +205,12 @@ class Engine:
                 #assuming a volume occupied by the liquid nitrous phase, return the difference between nitrogen and nitrous prressures.
                 def Pressure(VNOS):
                     PN2, TN2 = self.oxTank.gas.IsentropicVolumeChange(self.oxTank.volume - VNOS)
-                    PNOS = cp.PropsSI('P', 'U', self.oxTank.liquid.internalEnergy, 'D', mOx / VNOS, self.oxTank.liquid.fluid)
+                    try:
+                        PNOS = cp.PropsSI('P', 'U', self.oxTank.liquid.internalEnergy, 'D', mOx / VNOS, self.oxTank.liquid.fluid)
+                    except ValueError as e:
+                        print(f"Error: {e}")
+                        print(f"NOx mass too low! (Try increasing volume?)")
+                        exit()
                     return PN2 - PNOS
 
                 iterations = 0
@@ -241,6 +253,22 @@ class Engine:
             #update the extrinsic properties of the gas phase in the oxidizer tank using the new volume
             self.oxTank.gas.SetExtrinsicProperties("mass", self.oxTank.gas.mass)
 
+            '''
+            ################################################################
+            #######################DRAINING FUEL TANK#######################
+            ################################################################
+            '''
+            # print(self.parameters.OFRatio)
+            mFlow = self.fuelTank.CalcLiquidMassFlow(self.parameters.oxMassFlow, self.parameters.OFRatio, self.oxTank.liquid)
+            self.fuelTank.liquid.mass = self.fuelTank.liquid.RemoveMass(mFlow, self.simControl.timeStep)
+            
+            self.fuelTank.liquid.SetIntrinsicProperties("density", self.fuelTank.liquid.density, "pressure", self.fuelTank.liquid.pressure)
+            self.fuelTank.liquid.SetExtrinsicProperties("mass", self.fuelTank.liquid.mass)
+            
+            self.fuelTank.liquid.RemoveEnergyFuel(self.parameters.oxMassFlow, self.simControl.timeStep, self.oxTank.liquid)
+            #self.fuelTank.liquid.CalcLiquidMassFlow(self.parameters.oxMassFlow, self.parameters.OFRatio, self.oxTank.liquid)
+            #self.fuelTank.liquid.CalcVolumeChange(m, self.simControl.timeStep)
+            
             if self.nitrousPressurantValve.controller.opened:
 
                 '''

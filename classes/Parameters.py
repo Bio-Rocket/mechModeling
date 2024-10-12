@@ -8,3 +8,4 @@ class Parameters:
 
     def load(self, dic):
         self.oxMassFlow = convertToSI(dic["oxMassFlow"], dic["oxMassFlowUnit"], "mass")
+        self.OFRatio = dic["OF Ratio"]

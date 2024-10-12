@@ -3,12 +3,29 @@ from classes.OxTank import *
 from classes.PressTank import *
 from classes.State import *
 from classes.Engine import *
-from classes.EndConditions import *
+from classes.EndConditions import * 
+from classes.Plotter import *
 
 #dic = LoadJSON("simDefs/default.json") # Original data file that Lukas' created
-dic = LoadJSON("simDefs/default.json") # Mass budget values as of Sept. 15, 2024 (https://docs.google.com/spreadsheets/d/18GnIIEJeY7-gzHpHSoPhtmgDRNokLcbnRhNP7b0LVrU/edit?gid=879026709#gid=879026709)
+dic = LoadJSON("simDefs/defs_oct11.json") # Mass budget values as of Oct. 11, 2024 (https://docs.google.com/spreadsheets/d/18GnIIEJeY7-gzHpHSoPhtmgDRNokLcbnRhNP7b0LVrU/edit?gid=879026709#gid=879026709)
 
-engine = Engine()
-engine.Load(dic)
+#option to toggle simulation and plots
+#note: if an error occurs from the simulation, 
+#      you can disable sims the second time around 
+#      and run plots option only to display data.
 
-engine.runSim()
+RUN_SIM = False
+PLOTS = True
+
+if RUN_SIM:
+    engine = Engine()
+    engine.Load(dic)
+    engine.runSim()
+
+if PLOTS:
+    p = Plotter("log.csv")
+    p.load_data()
+    #each instance of .plot_columns, a new figure will be displayed
+    p.plot_columns(["engine.oxTank.liquid.mass", "engine.oxTank.gas.mass", "engine.pressTank.gas.mass", "engine.fuelTank.liquid.mass"])
+    p.plot_columns(["engine.oxTank.gas.pressure"])
+    p.show_all()

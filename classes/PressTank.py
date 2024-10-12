@@ -36,7 +36,8 @@ class PressTank:
         self.gas.Log(log, name)
 
     #calculates gas mass flow rate required to keep ullage pressure in oxTank constant
-    def CalcGassMassFlow(self, oxMassFlowRate, liquidOx):
+    def CalcGasMassFlow(self, oxMassFlowRate, liquidOx):
         oxVolumeFlow = oxMassFlowRate / liquidOx.density
         pressurantDensity = cp.PropsSI('D', 'P', liquidOx.pressure, 'T', liquidOx.temperature, self.gas.fluid)
+        print(self.pressurantMassFlowRate)
         self.pressurantMassFlowRate = pressurantDensity * oxVolumeFlow
