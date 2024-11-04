@@ -198,6 +198,22 @@ class State:
             except:
                 pass
 
+        elif prop1 == "density" and prop2 == "temperature":
+            self.density = value1
+            self.temperature = value2
+
+            self.internalEnergy = cp.PropsSI('U', 'D', self.density, 'T', self.temperature, self.fluid)
+            self.entropy = cp.PropsSI('S', 'D', self.density, 'T', self.temperature, self.fluid)
+            self.enthalpy = cp.PropsSI('H', 'D', self.density, 'T', self.temperature, self.fluid)
+            self.pressure = cp.PropsSI('P', 'D', self.density, 'T', self.temperature, self.fluid)
+            self.sonicVelocity = cp.PropsSI('A', 'D', self.density, 'T', self.temperature, self.fluid)
+            
+            try:
+                self.dynamicViscosity = cp.PropsSI('V', 'D', self.density, 'T', self.temperature, self.fluid)
+
+            except:
+                pass
+
     def RemoveMass(self, massFlowRate, timeStep):
         m = self.mass - massFlowRate * timeStep
         return m

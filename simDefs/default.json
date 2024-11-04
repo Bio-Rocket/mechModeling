@@ -1,12 +1,12 @@
 {
     "oxTank": {
         "name": "oxTank",
-        "volume": 7.37,
+        "volume": 10.6369,
         "volumeUnit": "L",
         "liquid": {
             "name": "liquid",
             "fluid": "NITROUSOXIDE",
-            "mass": 5.6,
+            "mass": 7.9029,
             "massUnit": "kg",
             "temperature": 15,
             "temperatureUnit": "C",
@@ -22,9 +22,16 @@
             "pressureUnit": "psi"
         }
     },
+    "fuelTank": {
+        "name": "fuelTank",
+        "volume": 2.0152,
+        "volumeUnit": "L",
+        "mass": 1.5900,
+        "massUnit": "kg"
+    },
     "pressTank": {
         "name": "pressTank",
-        "volume": 5,
+        "volume": 7.75,
         "volumeUnit": "L",
         "gas": {
             "name": "gas",
@@ -33,7 +40,7 @@
             "temperatureUnit": "C",
             "pressure": 5800,
             "pressureUnit": "psi",
-            "volume": 5,
+            "volume": 7.75,
             "volumeUnit": "L"
         }
     },
@@ -60,6 +67,8 @@
         "lowOxMassUnit": "kg",
         "lowPressurantMass": 0,
         "lowPressurantMassUnit": "kg",
+        "lowFuelMass": 0,
+        "lowFuelMassUnit": "kg",
         "endTime": 3,
         "endTimeUnit": "s"
     },
@@ -70,9 +79,9 @@
         "timeStepUnit": "s"
     },
     "parameters": {
-        "oxMassFlow": 1.868734672,
+        "oxMassFlow": 2.6343,
         "oxMassFlowUnit": "kg",
-        "pressurantMassFlow": 1.868734672,
-        "pressurantMassFlowUnit": "kg"
+        "fuelMassFlow": 0.5300,
+        "fuelMassFlowUnit": "kg"
     }
 }

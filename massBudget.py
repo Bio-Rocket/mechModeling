@@ -126,21 +126,34 @@ plt.show()
 
 #densities
 rhoNOS = cp.PropsSI('D', 'P', convertToSI(1350, "psi", "pressure"), 'T', convertToSI(15, "C", "temperature"), "NITROUSOXIDE")
-rhoFuel = 880
+rhoFuel = 789
 
 TN2start = 288.15
-TN2HighEnd = 213.8
-TN2LowEnd = 293
+TN2HighEnd = 190
+TN2LowEnd = 208
 PN2HighStart = 5800
-PN2HighEnd = 1600
+PN2HighEnd = 2000
 rhoN2HighStart = cp.PropsSI('D', 'P', convertToSI(5800, "psi", "pressure"), 'T', TN2start, "N2")
 rhoN2LowStart = cp.PropsSI('D', 'P', convertToSI(1350, "psi", "pressure"), 'T', TN2start, "N2")
 rhoN2HighEnd = cp.PropsSI('D', 'P', convertToSI(1600, "psi", "pressure"), 'T', TN2HighEnd, "N2")
 rhoN2LowEnd = cp.PropsSI('D', 'P', convertToSI(1350, "psi", "pressure"), 'T', TN2LowEnd, "N2")
 RN2 = 8314 / 28.02
 
+Tc = 126.2
+Pc = 3390e3
+
+TrStart = TN2start / Tc
+
+TrHighEnd = TN2HighEnd / Tc
+TrLowEnd = TN2LowEnd / Tc
+
+PrHighEnd = convertToSI(PN2HighEnd, "psi", "pressure") / Pc
+PrLow = convertToSI(1350, "psi", "pressure") / Pc
+
+z = 0.85
+
 #all the fixed mass of the rocket
-fixedRocketMass = 43.462 * 1.1 #current mass budget value + 10 % allowance
+fixedRocketMass = 43.672 * 1.1 #current mass budget value + 10 % allowance
 
 #parameters
 burnTime = 3
@@ -164,11 +177,14 @@ Ve = Ve * CStar * Nozzle # Efficiency knockdown factors
 
 def getVariableMass(rocketMass):
     thrust = rocketMass * g * TWR
+
     mProp = thrust / Ve * 3 #amount of propellant for 3 second burn
+
     mFuel = mProp / (1 + OF)
     mOx = OF * mFuel
 
     vFuel = mFuel / rhoFuel #volume of fuel, assuming 880 kg/m^3 density, no ullage
+
     fuelTankMass = FuelPVMass(vFuel)
 
     deadVolume = FuelDeadVolume(vFuel) #volume occupied by fuel tank in nitrous tank.
@@ -179,23 +195,34 @@ def getVariableMass(rocketMass):
     vTank = vTank + deadVolume
 
     oxTankMass = NOSPVMass(vTank)
-    
-    ullageMass = rhoN2LowStart * vUllage
 
+    ullageMass = rhoN2LowStart * vUllage
+    ''' #Determining N2 PV mass
     endN2MassLow = rhoN2LowEnd * (vTank - deadVolume)
+
     N2Used = endN2MassLow - ullageMass
 
     PTTerm = TN2HighEnd/TN2start * PN2HighStart/PN2HighEnd
     N2MassInitial = N2Used * PTTerm / (PTTerm - 1)
     
-    VN2 = N2MassInitial * RN2 * TN2start / convertToSI(PN2HighStart, "psi", "pressure")
+    VN2 = N2MassInitial / cp.PropsSI("D", "T", TN2start, "P", convertToSI(PN2HighStart, "psi", "pressure"), "N2")
+
     N2TankMass = N2PVMass(VN2)
     N2TubeMass = N2AirframeMass(VN2)
 
     N2MassFinal = N2MassInitial - N2Used
     
     variableMass = N2TubeMass + N2MassInitial + N2TankMass + mFuel + fuelTankMass + oxTankMass + mOx + ullageMass
-
+    '''
+    
+    #Enforced N2 Tank Volume
+    VN2 = 7.75/1000 #nitrogen tank volume
+    N2TankMass = N2PVMass(VN2)
+    N2TubeMass = N2AirframeMass(VN2)
+    N2MassInitial = cp.PropsSI('D', 'P', convertToSI(5800, "psi", "pressure"), 'T', convertToSI(15, 'C', 'temperature'), 'N2') * VN2
+    
+    variableMass = N2TubeMass + N2MassInitial + N2TankMass + mFuel + fuelTankMass + oxTankMass + mOx + ullageMass
+    
     return variableMass
 
 variableMass = getVariableMass(fixedRocketMass)
@@ -203,38 +230,40 @@ variableMass = getVariableMass(fixedRocketMass)
 mass = []
 thrust = []
 n = []
-"""Finding rocket mass / thrust requirement
+#Finding rocket mass / thrust requirement
 for i in range(100):
     variableMass = getVariableMass(fixedRocketMass + variableMass)
     mass.append(variableMass + fixedRocketMass)
     thrust.append(g * (fixedRocketMass + variableMass) * TWR)
     n.append(i)
 
-"""
 
-
-''' plotting convergence of thrust, rocket mass.
+#plotting convergence of thrust, rocket mass.
 fig, ax = plt.subplots()
 
 ax.plot(n, thrust)
 ax.set_ylabel("Thrust (N)")
 ax.set_xlabel("Iterations")
-plt.show()
-'''
+#plt.show()
+
 
 def rocketDesign(thrust):
-    print("Design thrust: %.4s N" %thrust)
+    print("Design thrust: %.4f N" %thrust)
     mProp = thrust / Ve * 3 #amount of propellant for 3 second burn
-    print("Propellant mass: %.4s kg" %mProp)
-    print("Propellant mass flow rate: %.4s kg/s" %(mProp  / 3))
+    print("Propellant mass: %.4f kg" %mProp)
+    print("Propellant mass flow rate: %.4f kg/s\n" %(mProp  / 3))
     mFuel = mProp / (1 + OF)
-    print("Fuel mass: %.4s kg" %mFuel)
-    print("Fuel mass flow rate: %.4s kg/s" %(mFuel / 3))
+    print("Fuel mass: %.4f kg" %mFuel)
+    print("Fuel mass flow rate: %.4f kg/s\n" %(mFuel / 3))
     mOx = OF * mFuel
-    print("NOS mass: %.4s kg" %mOx)
-    print("NOS mass flow rate: %.4s kg/s" %(mOx / 3))
+    print("NOS mass: %.4f kg" %mOx)
+    print("NOS mass flow rate: %.4f kg/s\n" %(mOx / 3))
 
     vFuel = mFuel / rhoFuel #volume of fuel, assuming 880 kg/m^3 density, no ullage
+    print("Fuel volume: %.4f L" %(vFuel * 1000))
+    A = math.pi * convertToSI(3.75, "in", "length") ** 2 / 4
+    length = vFuel / A 
+    print("Fuel tank length: %.4f m\n" %length)
     fuelTankMass = FuelPVMass(vFuel)
 
     deadVolume = FuelDeadVolume(vFuel) #volume occupied by fuel tank in nitrous tank.
@@ -244,22 +273,50 @@ def rocketDesign(thrust):
     vTank = vOx + vUllage
     vTank = vTank + deadVolume
 
+    print("Oxidizer volume: %.4f L" %((vOx + vUllage) * 1000))
+    A = math.pi * convertToSI(5.75, "in", "length") ** 2 /4
+    length = vTank / A 
+    print("Oxidizer tank length: %.4f m\n" % length)
+
     oxTankMass = NOSPVMass(vTank)
     
     ullageMass = rhoN2LowStart * vUllage
 
+    print("Ullage mass: %.4f kg\n" %ullageMass)
+
+    ''' #determining N2 volume
     endN2MassLow = rhoN2LowEnd * (vTank - deadVolume)
+    print("End N2 Mass: %.4f kg" % endN2MassLow)
     N2Used = endN2MassLow - ullageMass
 
     PTTerm = TN2HighEnd/TN2start * PN2HighStart/PN2HighEnd
     N2MassInitial = N2Used * PTTerm / (PTTerm - 1)
+    print("Nitrogen mass: %.4f kg" %N2MassInitial)
     
-    VN2 = N2MassInitial * RN2 * TN2start / convertToSI(PN2HighStart, "psi", "pressure")
+    VN2 = N2MassInitial / cp.PropsSI("D", "T", TN2start, "P", convertToSI(PN2HighStart, "psi", "pressure"), "N2")
+    print("Nitrogen tank volume: %.4f L" %(VN2 * 1000))
+    A = math.pi * convertToSI(3, "in", "length") ** 2 / 4
+    length = VN2 / A 
+    print("Nitrogen tank length: %.4f m" %length)
     N2TankMass = N2PVMass(VN2)
     N2TubeMass = N2AirframeMass(VN2)
 
-    N2MassFinal = N2MassInitial - N2Used
-    
-    variableMass = N2TubeMass + N2MassInitial + N2TankMass + mFuel + fuelTankMass + oxTankMass + mOx + ullageMass
+    print("Nitrogen tank mass: %.4f kg" %N2TankMass)
 
-rocketDesign(5500)
+    N2MassFinal = N2MassInitial - N2Used
+    print("Final Nitrogen Mass: %.4f kg" %N2MassFinal)
+    '''
+
+    #enforced N2 tank volume
+    VN2 = 7.75/1000 #nitrogen tank volume
+    N2TankMass = N2PVMass(VN2)
+    N2TubeMass = N2AirframeMass(VN2)
+    N2MassInitial = cp.PropsSI('D', 'P', convertToSI(5800, "psi", "pressure"), 'T', convertToSI(15, 'C', 'temperature'), 'N2') * VN2
+    
+    A = math.pi * convertToSI(3, "in", "length") ** 2 / 4
+    length = VN2 / A 
+    print("Nitrogen tank length: %.4f m" %length)
+    variableMass = N2TubeMass + N2MassInitial + N2TankMass + mFuel + fuelTankMass + oxTankMass + mOx + ullageMass
+    print(9.81* TWR*(variableMass + fixedRocketMass))
+
+rocketDesign(max(thrust))

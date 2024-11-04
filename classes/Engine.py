@@ -1,4 +1,5 @@
 from classes.OxTank import *
+from classes.FuelTank import *
 from classes.PressTank import *
 from classes.EndConditions import *
 from classes.SimControl import *
@@ -12,7 +13,10 @@ import numpy as np
 class Engine:
     oxTank = "" #instance of class Oxtank
     pressTank = "" #instance of class PressTank
+    fuelTank = "" #instance of class fuelTank
     nitrousPressurantValve = "" #instance of class Orifice
+
+    pressurantFlowRate = "" #The mass flow rate of pressurant
 
     endConditions = "" #instance of class EndConditions
     simControl = "" #instance of class simControl
@@ -28,6 +32,9 @@ class Engine:
 
         self.pressTank = PressTank()
         self.pressTank.Load(dic["pressTank"])
+
+        self.fuelTank = FuelTank()
+        self.fuelTank.Load(dic["fuelTank"])
 
         self.nitrousPressurantValve = Orifice()
         self.nitrousPressurantValve.Load(dic["nitrousPressurantValve"])
@@ -50,15 +57,21 @@ class Engine:
         self.simControl.InitLog(self.log)
         self.oxTank.InitLog(self.log, "engine")
         self.pressTank.InitLog(self.log, "engine")
+        self.fuelTank.InitLog(self.log, "engine")
         self.nitrousPressurantValve.InitLog(self.log, "engine")
+
+        self.log["engine.pressurantFlowRate"] = pd.Series(dtype='float64')
 
     def Log(self):
         self.log = pd.concat([self.log, pd.DataFrame([{col: None for col in self.log.columns}])], ignore_index=True)
         
         self.simControl.Log(self.log)
         self.oxTank.Log(self.log, "engine")
+        self.fuelTank.Log(self.log, "engine")
         self.nitrousPressurantValve.Log(self.log, "engine")
         self.pressTank.Log(self.log, "engine")
+
+        self.log["engine.pressurantFlowRate"].iat[-1] = self.pressurantFlowRate
 
     '''
     Summary:
@@ -263,7 +276,7 @@ class Engine:
                     b = self.oxTank.volume - ( ( self.oxTank.gas.mass * self.oxTank.gas.R * self.oxTank.gas.temperature ) / self.pressTank.gas.pressure )
                     c = (a + b) / 2
 
-                    #assuming a volume occupied by the liquid nitrous phase, return the difference between nitrogen and nitrous prressures.
+                    #assuming a volume occupied by the liquid nitrous phase, return the difference between nitrogen and nitrous pressures.
                     def Pressure(VNOS):
                         PN2 = mGas * self.oxTank.gas.R * self.oxTank.gas.temperature / (self.oxTank.volume - VNOS)
                         PNOS = cp.PropsSI('P', 'U', self.oxTank.liquid.internalEnergy, 'D', self.oxTank.liquid.mass / VNOS, self.oxTank.liquid.fluid)
@@ -348,5 +361,120 @@ class Engine:
             
             #set to True to run only once, for testing
             #endReached = True
+
+        self.log.to_csv("log.csv")
+
+    def RegulatorBlowDown(self):
+        print("Running Simulation...")
+
+        self.Log()
+
+        endReached = False
+
+        while not endReached:
+
+            #update the time
+            self.simControl.UpdateTime()
+
+            if self.simControl.currentTime > self.endConditions.endTime:
+                endReached = True
+                print("Simulation terminated. Reached end time.")
+                break
+
+            #print sim status to console every 50 time steps.
+            if int( self.simControl.currentTime * (1 / self.simControl.timeStep)) % 50 == 0:
+                print("Current time: %.3f" % self.simControl.currentTime)
+
+
+            #update the fuel Tank
+            m = self.fuelTank.mass - (self.simControl.timeStep * self.parameters.fuelMassFlow)
+
+            if m <= self.endConditions.lowFuelMass:
+                endReached = True
+                print("Simulation terminated. Ran out of fuel.")
+                break
+
+            self.fuelTank.mass = m
+            self.fuelTank.volume = self.fuelTank.mass / self.fuelTank.density
+
+            #drain the oxidizer tank
+            m = self.oxTank.liquid.RemoveMass(self.parameters.oxMassFlow, self.simControl.timeStep)
+
+            if m <= self.endConditions.lowOxMass:
+                endReached = True
+                print("Simulation terminated. Ran out of oxidizer.")
+                break
+
+            u = self.oxTank.liquid.RemoveEnergy(self.parameters.oxMassFlow, self.simControl.timeStep)
+            
+            #assuming pressure stays constant (due to active pressure control), update other properties
+            self.oxTank.liquid.SetIntrinsicProperties("pressure", self.oxTank.liquid.pressure, "internalEnergy", u)
+            self.oxTank.liquid.SetExtrinsicProperties("mass", m)
+
+            self.oxTank.volume = self.oxTank.initialVolume + (self.fuelTank.initialVolume - self.fuelTank.volume)
+            
+            #find volume of gas phase in NOS tank from expulsion of NOS, fuel
+            VN2 = self.oxTank.volume - self.oxTank.liquid.volume
+
+            #find the temperature, enthalpy of the nitrogen added to the NOS tank.
+            T = self.pressTank.gas.IsentropicPressureChange(self.oxTank.liquid.pressure)
+            hIn = cp.PropsSI('H', 'T', T, 'P', self.oxTank.liquid.pressure, self.pressTank.gas.fluid)
+
+            #numerically solve for flow rate
+            def FlowRate():
+                a = 0
+                b = 5
+                c = (a + b) / 2
+
+                def PN2(massFlow):
+                    m = self.oxTank.gas.AddMass(massFlow, self.simControl.timeStep)
+                    u = self.oxTank.gas.AddEnergy(massFlow, self.simControl.timeStep, hIn)
+                    density = m / VN2
+                    p = cp.PropsSI('P', 'D', density, 'U', u, self.oxTank.gas.fluid)
+                    return p - self.oxTank.liquid.pressure
+
+                while True:
+                    fa = PN2(a)
+                    fc = PN2(c)
+
+                    if fa * fc < 0:
+                        b = c
+
+                    else:
+                        a = c 
+
+                    c = (a + b) / 2
+
+                    if abs (PN2(c)) < 2:
+                        break
+
+                return c 
+
+            pressurantMassFlow = FlowRate()
+            self.pressurantFlowRate = pressurantMassFlow
+
+            #add pressurant to propellant tank
+            m = self.oxTank.gas.AddMass(pressurantMassFlow, self.simControl.timeStep)
+            u = self.oxTank.gas.AddEnergy(pressurantMassFlow, self.simControl.timeStep, hIn)
+            density = m / VN2
+            self.oxTank.gas.SetIntrinsicProperties("density", density, "internalEnergy", u)
+            self.oxTank.gas.SetExtrinsicProperties("volume", VN2)
+
+            #remove pressurant from pressurant tank
+            m = self.pressTank.gas.RemoveMass(pressurantMassFlow, self.simControl.timeStep)
+
+            if m <= self.endConditions.lowPressurantMass:
+                endReached = True
+                print("Simulation terminated. Ran out of pressurant.")
+                break
+
+            #u = self.pressTank.gas.RemoveEnergy(pressurantMassFlow, self.simControl.timeStep)
+            density = m / self.pressTank.volume
+            #using a fixed temperature lapse rate to limit the degree of cooling to a reasonable value
+            self.pressTank.gas.SetIntrinsicProperties("density", density, "temperature", self.pressTank.gas.temperature - (40/3 * self.simControl.timeStep))
+            self.pressTank.gas.SetExtrinsicProperties("volume", self.pressTank.gas.volume)
+
+            #update the log
+            self.Log()
 
         self.log.to_csv("log.csv")

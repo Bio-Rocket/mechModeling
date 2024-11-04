@@ -5,6 +5,7 @@ class OxTank:
     #constants
     name = "" #name of the tank
     volume = 0 #total volume of rigid tank, in m3
+    initialVolume = 0 #the total volume of the tank, initial.
 
     #variables
     liquid = "" #state object of the liquid phase in the tank
@@ -15,6 +16,7 @@ class OxTank:
 
     def Load(self, dic):
         self.volume = convertToSI(dic["volume"], dic["volumeUnit"], "volume")
+        self.initialVolume = self.volume
 
         self.liquid = State()
         self.liquid.Load(dic["liquid"])

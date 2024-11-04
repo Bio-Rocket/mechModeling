@@ -12,4 +12,5 @@ class EndConditions:
     def Load(self, dic):
         self.lowOxMass = convertToSI(dic["lowOxMass"], dic["lowOxMassUnit"], "mass")
         self.lowPressurantMass = convertToSI(dic["lowPressurantMass"], dic["lowPressurantMassUnit"], "mass")
+        self.lowFuelMass = convertToSI(dic["lowFuelMass"], dic["lowFuelMassUnit"], "mass")
         self.endTime = convertToSI(dic["endTime"], dic["endTimeUnit"], "time")
