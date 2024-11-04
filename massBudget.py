@@ -5,32 +5,36 @@ from rocketcea.cea_obj import CEA_Obj, add_new_fuel, add_new_oxidizer
 from rocketcea.units import add_user_units
 from matplotlib import pyplot as plt
 
+fuelPVLength = 0
+NOSPVLength = 0
+N2PVLength = 0
+
 def NOSPVMass(volume):
     density = 2710 #kg/m^3
     ID = convertToSI(5.75, "in", "length")
     A = math.pi * ID ** 2 / 4
-    length = volume / A 
+    NOSPVLength = volume / A 
     OD = convertToSI(6, "in", "length")
     A = math.pi * (OD ** 2 - ID **2) / 4
-    return length * A * density
+    return NOSPVLength * A * density, NOSPVLength
 
 def FuelPVMass(volume):
     density = 2710 #kg/m^3
     ID = convertToSI(3.75, "in", "length")
     A = math.pi * ID ** 2 / 4
-    length = volume / A 
+    fuelPVLength = volume / A 
     OD = convertToSI(4, "in", "length")
     A = math.pi * (OD ** 2 - ID **2) / 4
-    return length * A * density
+    return fuelPVLength * A * density, fuelPVLength
 
 def N2PVMass(volume):
     density = 2710 #kg/m^3
     ID = convertToSI(3, "in", "length")
     A = math.pi * ID ** 2 / 4
-    length = volume / A 
+    N2PVLength = volume / A 
     OD = convertToSI(4, "in", "length")
     A = math.pi * (OD ** 2 - ID **2) / 4
-    return length * A * density
+    return N2PVLength * A * density, N2PVLength
 
 def N2AirframeMass(volume):
     ID = convertToSI(3, "in", "length")
@@ -40,7 +44,13 @@ def N2AirframeMass(volume):
 
 #calculates the amount of volume occupied by the fuel tank in the nitrous tank
 def FuelDeadVolume(volume):
-    v0 = 0.000295677444 #dead volume of fuel tank at 0 fuel volume
+    #v0 = 0.000295677444 #dead volume of fuel tank at 0 fuel volume
+    #top pv volume = 0.000104
+    #fuel wall volume = 0.000170
+    #single bolt volume = 0.000001, x 16 = 0.000016
+    #lower bulk head = 0.000141"
+    #total volume = 0.001367
+    v0 = 0.001367
 
     ID = convertToSI(3.75, "in", "length")
     A = math.pi * ID ** 2 / 4
@@ -87,7 +97,6 @@ chamberPressure = 809.9529469
 exitPressure = 12
 expansionRatio = getEps(C, 1, chamberPressure,exitPressure)'''
 
-
 ''' finding optimal OF ratio
 OF = []
 equilibriumIsp = []
@@ -109,8 +118,6 @@ equilibriumMaxOF = OF[equilibriumMaxIndex]
 print(frozenMaxOF, equilibriumMaxOF)
 print((frozenMaxOF + equilibriumMaxOF) / 2)'''
 
-
-
 ''' plotting Isp curves
 fig, ax = plt.subplots()
 
@@ -122,11 +129,9 @@ ax.legend(["Equilibrium", "Frozen"])
 plt.show()
 '''
 
-
-
 #densities
 rhoNOS = cp.PropsSI('D', 'P', convertToSI(1350, "psi", "pressure"), 'T', convertToSI(15, "C", "temperature"), "NITROUSOXIDE")
-rhoFuel = 880
+rhoFuel = cp.PropsSI('D', 'P', convertToSI(1350, "psi", "pressure"), 'T', convertToSI(15, "C", "temperature"), "ETHANOL") #880
 
 TN2start = 288.15
 TN2HighEnd = 213.8
@@ -203,6 +208,7 @@ variableMass = getVariableMass(fixedRocketMass)
 mass = []
 thrust = []
 n = []
+
 """Finding rocket mass / thrust requirement
 for i in range(100):
     variableMass = getVariableMass(fixedRocketMass + variableMass)
@@ -211,7 +217,6 @@ for i in range(100):
     n.append(i)
 
 """
-
 
 ''' plotting convergence of thrust, rocket mass.
 fig, ax = plt.subplots()
@@ -235,7 +240,7 @@ def rocketDesign(thrust):
     print("NOS mass flow rate: %.4s kg/s" %(mOx / 3))
 
     vFuel = mFuel / rhoFuel #volume of fuel, assuming 880 kg/m^3 density, no ullage
-    fuelTankMass = FuelPVMass(vFuel)
+    fuelTankMass, fuelPVLength = FuelPVMass(vFuel)
 
     deadVolume = FuelDeadVolume(vFuel) #volume occupied by fuel tank in nitrous tank.
 
@@ -244,7 +249,7 @@ def rocketDesign(thrust):
     vTank = vOx + vUllage
     vTank = vTank + deadVolume
 
-    oxTankMass = NOSPVMass(vTank)
+    oxTankMass, NOSPVLength = NOSPVMass(vTank)
     
     ullageMass = rhoN2LowStart * vUllage
 
@@ -255,9 +260,12 @@ def rocketDesign(thrust):
     N2MassInitial = N2Used * PTTerm / (PTTerm - 1)
     
     VN2 = N2MassInitial * RN2 * TN2start / convertToSI(PN2HighStart, "psi", "pressure")
-    N2TankMass = N2PVMass(VN2)
+    N2TankMass, N2PVLength = N2PVMass(VN2)
     N2TubeMass = N2AirframeMass(VN2)
 
+    print("\nNOS PV Length: %.4f m" %NOSPVLength)
+    print("Fuel PV Length: %.4f m" %fuelPVLength)
+    print("N2 PV Length: %.4f m" %N2PVLength)
     N2MassFinal = N2MassInitial - N2Used
     
     variableMass = N2TubeMass + N2MassInitial + N2TankMass + mFuel + fuelTankMass + oxTankMass + mOx + ullageMass
