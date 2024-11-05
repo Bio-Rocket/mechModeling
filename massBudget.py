@@ -86,16 +86,19 @@ def getEps(C, mr, pc, pa):
 chamberPressure = 809.9529469
 exitPressure = 12
 expansionRatio = getEps(C, 1, chamberPressure,exitPressure)'''
+expansionRatio = 9.155864715576172
+chamberPressure = 809.9529469
 
-
-''' finding optimal OF ratio
+#finding optimal OF ratio
 OF = []
 equilibriumIsp = []
 frozenIsp = []
+realIsp = []
 for i in range(4250, 5500):
     OF.append(i/1000)
     equilibriumIsp.append(C.get_Isp(Pc=chamberPressure, MR=i/1000, eps=expansionRatio, frozen=0, frozenAtThroat=0))
     frozenIsp.append(C.get_Isp(Pc=chamberPressure, MR=i/1000, eps=expansionRatio, frozen=1, frozenAtThroat=1))
+    realIsp.append((frozenIsp[-1] + equilibriumIsp[-1]) /2)
 
 
 frozenMax = max(frozenIsp)
@@ -106,21 +109,32 @@ equilibriumMax = max(equilibriumIsp)
 equilibriumMaxIndex = equilibriumIsp.index(equilibriumMax)
 equilibriumMaxOF = OF[equilibriumMaxIndex]
 
-print(frozenMaxOF, equilibriumMaxOF)
-print((frozenMaxOF + equilibriumMaxOF) / 2)'''
+realMax = max(realIsp)
+realMaxIndex = realIsp.index(realMax)
+realMaxOF = OF[realMaxIndex]
+
+print(frozenMaxOF, equilibriumMaxOF, realMaxOF)
+print((frozenMaxOF + equilibriumMaxOF) / 2)
 
 
 
-''' plotting Isp curves
+#plotting Isp curves
 fig, ax = plt.subplots()
 
 ax.plot(OF, equilibriumIsp)
 ax.plot(OF, frozenIsp)
+ax.plot(OF, realIsp)
+plt.axvline(x=realMaxOF, color='red', linestyle='--', linewidth=0.5)
 ax.set_ylabel("Specific Impulse (s)")
 ax.set_xlabel("O/F Ratio")
-ax.legend(["Equilibrium", "Frozen"])
+ax.legend(["Equilibrium", "Frozen", "Real", "Optimal OF Ratio"])
 plt.show()
-'''
+
+fig.savefig("OF Ratio", dpi=None,
+        orientation='portrait', papertype=None, format=None,
+        transparent=True, bbox_inches=None, pad_inches=0.1,
+        frameon=None)
+
 
 
 
