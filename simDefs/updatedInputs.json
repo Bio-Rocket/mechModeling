@@ -22,9 +22,16 @@
             "pressureUnit": "psi"
         }
     },
+    "fuelTank": {
+        "name": "fuelTank",
+        "volume": 2.0152,
+        "volumeUnit": "L",
+        "mass": 1.5900,
+        "massUnit": "kg"
+    },
     "pressTank": {
         "name": "pressTank",
-        "volume": 5,
+        "volume": 7.75,
         "volumeUnit": "L",
         "gas": {
             "name": "gas",
@@ -33,7 +40,7 @@
             "temperatureUnit": "C",
             "pressure": 5800,
             "pressureUnit": "psi",
-            "volume": 5,
+            "volume": 7.75,
             "volumeUnit": "L"
         }
     },
@@ -43,9 +50,9 @@
         "diameterUnit": "in",
         "controller": {
             "name": "controller",
-            "openDelay": 10,
+            "openDelay": 20,
             "openDelayUnit": "ms",
-            "closeDelay": 10,
+            "closeDelay": 20,
             "closeDelayUnit": "ms",
             "lowThreshold": 1325,
             "lowThresholdUnit": "psi",
@@ -60,6 +67,8 @@
         "lowOxMassUnit": "kg",
         "lowPressurantMass": 0,
         "lowPressurantMassUnit": "kg",
+        "lowFuelMass": 0,
+        "lowFuelMassUnit": "kg",
         "endTime": 3,
         "endTimeUnit": "s"
     },
@@ -72,7 +81,7 @@
     "parameters": {
         "oxMassFlow": 2.6343,
         "oxMassFlowUnit": "kg",
-        "pressurantMassFlow": 3.1643,
-        "pressurantMassFlowUnit": "kg"
+        "fuelMassFlow": 0.5300,
+        "fuelMassFlowUnit": "kg"
     }
 }
