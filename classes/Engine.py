@@ -451,7 +451,9 @@ class Engine:
                 return c 
 
             pressurantMassFlow = FlowRate()
-            self.pressurantFlowRate = pressurantMassFlow
+            self.pressTank.pressurantMassFlowRate = pressurantMassFlow
+            self.pressTank.pressurantMassFlowRateFuel = self.parameters.fuelMassFlow / self.fuelTank.density * self.pressTank.gas.density
+            self.pressTank.pressurantMassFlowRateOx = self.pressTank.pressurantMassFlowRate - self.pressTank.pressurantMassFlowRateFuel
 
             #add pressurant to propellant tank
             m = self.oxTank.gas.AddMass(pressurantMassFlow, self.simControl.timeStep)
