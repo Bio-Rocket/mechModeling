@@ -88,7 +88,7 @@ exitPressure = 12
 expansionRatio = getEps(C, 1, chamberPressure,exitPressure)'''
 expansionRatio = 9.155864715576172
 chamberPressure = 809.9529469
-
+'''
 #finding optimal OF ratio
 OF = []
 equilibriumIsp = []
@@ -133,7 +133,7 @@ ax.legend(["Equilibrium", "Frozen", "Real", "Optimal OF Ratio"])
 #fig.savefig("OF Ratio", dpi=None, orientation='portrait', papertype=None, format=None,transparent=True, bbox_inches=None, pad_inches=0.1,frameon=None)
 
 
-
+'''
 
 #densities
 rhoNOS = cp.PropsSI('D', 'P', convertToSI(1350, "psi", "pressure"), 'T', convertToSI(15, "C", "temperature"), "NITROUSOXIDE")
@@ -336,3 +336,8 @@ def rocketDesign(thrust):
     print(9.81* TWR*(variableMass + fixedRocketMass))
 
 rocketDesign(max(thrust))
+
+rhoNOS = cp.PropsSI('D', 'T', 15 + 273, 'P', 9307922, 'NITROUSOXIDE')
+rhoN2 = cp.PropsSI('D', 'T', -50 + 273, 'P', 9307922, 'N2')
+
+print(rhoNOS, rhoN2)
