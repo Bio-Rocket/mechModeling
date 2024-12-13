@@ -75,7 +75,7 @@
     "simControl": {
         "startTime": 0,
         "startTimeUnit": "s",
-        "timeStep": 0.001,
+        "timeStep": 0.01,
         "timeStepUnit": "s"
     },
     "parameters": {
