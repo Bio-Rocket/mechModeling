@@ -106,8 +106,13 @@ VELOCITY_UPSTREAM = FLOWRATE_UPSTREAM / A_3_8
 VELOCITY_DOWNSTREAM_OX = FLOWRATE_DOWNSTREAM_OX / A_1_2
 VELOCITY_DOWNSTREAM_FUEL_1 = FLOWRATE_DOWNSTREAM_FUEL_1 / A_1_2
 VELOCITY_DOWNSTREAM_FUEL_2 = FLOWRATE_DOWNSTREAM_FUEL_2 / A_1_4
-
 print(f"[v] Velocity, U.S.(3/8\"): {VELOCITY_UPSTREAM:.2f}m/s, D.S.(1/2\"): {VELOCITY_DOWNSTREAM_OX:.2f}m/s, D.S.(1/2\"): {VELOCITY_DOWNSTREAM_FUEL_1:.2f}m/s, D.S.(1/4\"): {VELOCITY_DOWNSTREAM_FUEL_2:.2f}m/s")
+
+Ma_UPSTREAM = VELOCITY_UPSTREAM / N2_UPSTREAM.sonicVelocity
+Ma_DOWNSTREAM_OX = VELOCITY_DOWNSTREAM_OX / N2_DOWNSTREAM.sonicVelocity
+Ma_DOWNSTREAM_FUEL_1 = VELOCITY_DOWNSTREAM_FUEL_1 / N2_DOWNSTREAM.sonicVelocity
+Ma_DOWNSTREAM_FUEL_2 = VELOCITY_DOWNSTREAM_FUEL_2 / N2_DOWNSTREAM.sonicVelocity
+print(f"[Ma] Mach, U.S.(3/8\"): {Ma_UPSTREAM:.2f}, D.S.OX(1/2\"): {Ma_DOWNSTREAM_OX:.2f}, D.S.Fuel(1/2\"): {Ma_DOWNSTREAM_FUEL_1:.2f}, D.S.OX(1/4\"): {Ma_DOWNSTREAM_FUEL_2:.2f}")
 
 # Reynolds Number
 Re_UPSTREAM = N2_UPSTREAM.density * VELOCITY_UPSTREAM * ID_3_8 / N2_UPSTREAM.dynamicViscosity
@@ -128,12 +133,72 @@ PLoss_FITTINGS_DOWNSTREAM_FUEL_1 = sum(K * (N2_DOWNSTREAM.density * VELOCITY_DOW
 PLoss_FITTINGS_DOWNSTREAM_FUEL_1_IMPERIAL = PLoss_FITTINGS_DOWNSTREAM_FUEL_1 / convertToSI(1, "psi", "pressure")
 PLoss_FITTINGS_DOWNSTREAM_FUEL_2 = sum(K * (N2_DOWNSTREAM.density * VELOCITY_DOWNSTREAM_FUEL_2 ** 2) / (2) for K in FITTINGS_DOWNSTREAM_FUEL_2)
 PLoss_FITTINGS_DOWNSTREAM_FUEL_2_IMPERIAL = PLoss_FITTINGS_DOWNSTREAM_FUEL_2 / convertToSI(1, "psi", "pressure")
-
 print(f"Pressure Loss due to fittings U.S.(3/8\"): {PLoss_FITTINGS_UPSTREAM_IMPERIAL:.2f}PSI, D.S.Ox(1/2\"): {PLoss_FITTINGS_DOWNSTREAM_OX_IMPERIAL:.2f}PSI, D.S.Fuel(1/2\"): {PLoss_FITTINGS_DOWNSTREAM_FUEL_1_IMPERIAL:.2f}PSI, D.S.Fuel(1/4\"): {PLoss_FITTINGS_DOWNSTREAM_FUEL_2_IMPERIAL:.2f}PSI")
 
+def colebrook_white(epsilon, D, Re, tol=1e-6, max_iter=100):
+    """
+    Calculates the Darcy-Weisbach friction factor using the Colebrook-White equation.
+    
+    Parameters:
+        epsilon (float): Absolute roughness of the pipe (m).
+        D (float): Inner diameter of the pipe (m).
+        Re (float): Reynolds number (dimensionless).
+        tol (float): Convergence tolerance.
+        max_iter (int): Maximum number of iterations.
+    
+    Returns:
+        float: Darcy-Weisbach friction factor.
+    """
+    if Re < 2300:
+        # For laminar flow, use f = 64 / Re
+        return 64 / Re
+    # Initial guess for friction factor (e.g., Blasius approximation)
+    f = 0.02
+    # Iterative process to solve Colebrook-White equation
+    for i in range(max_iter):
+        f_new = 1 / (-2 * m.log10((epsilon / D) / 3.7 + 2.51 / (Re * m.sqrt(f))))
+        if abs(f_new - f) < tol:  # Check for convergence
+            return f_new
+        f = f_new
 
-f_UPSTREAM = 0.25 / (m.log10((ROUGHNESS / ID_3_8) / 3.7 + 5.74 / (Re_UPSTREAM ** 0.9))) ** 2
-PLoss_FRICTION_UPSTREAM = (f_UPSTREAM * N2_UPSTREAM.density * L_UPSTREAM * VELOCITY_UPSTREAM ** 2) / (2 * ID_3_8)
+    raise ValueError("Colebrook-White iteration did not converge within the maximum iterations")
+
+def weymouth_pressure_drop(Q, T, D, L, P1):
+    """
+    Calculates the downstream pressure (P2) using the Weymouth equation.
+
+    Parameters:
+        Q (float): Flow rate (m³/s).
+        T (float): Gas temperature (K).
+        D (float): Pipe diameter (m).
+        Z (float): Compressibility factor (dimensionless).
+        G (float): Specific gravity of the gas relative to air (dimensionless).
+        L (float): Pipe length (m).
+        P1 (float): Upstream pressure (Pa).
+
+    Returns:
+        float: Downstream pressure (P2) in Pascals (Pa).
+    """
+    # Convert upstream pressure to kPa for intermediate calculation
+    P1_kPa = P1 / 1000
+    Z = cp.PropsSI("Z", "T", T, "P", P1, "N2") # Compressibility factor
+    M_N2 = cp.PropsSI("M", "N2") # Molar mass of methane (kg/mol)
+    G = M_N2 / 0.02897 # Specific gravity relative to air (dimensionless)
+    # Intermediate constant (adapted for SI units)
+    constant = 125 * T * D**2.667 / (Z * G * L)
+    # Calculate downstream pressure (P2) in kPa
+    P2_kPa_squared = P1_kPa**2 - (Q / constant)**2
+    if P2_kPa_squared < 0:
+        raise ValueError("The calculated downstream pressure (P2) is not physically possible. Check inputs.")
+    # Convert back to Pa
+    P2 = m.sqrt(P2_kPa_squared) * 1000
+    return P2 
+
+#f_UPSTREAM = 0.25 / (m.log10((ROUGHNESS / ID_3_8) / 3.7 + 5.74 / (Re_UPSTREAM ** 0.9))) ** 2
+f_UPSTREAM = colebrook_white(ROUGHNESS, ID_3_8, Re_UPSTREAM)
+print(f_UPSTREAM)
+PLoss_FRICTION_UPSTREAM = weymouth_pressure_drop(FLOWRATE_UPSTREAM, N2_UPSTREAM.temperature, ID_3_8, L_UPSTREAM, N2_UPSTREAM.pressure)
+#PLoss_FRICTION_UPSTREAM = (f_UPSTREAM * N2_UPSTREAM.density * L_UPSTREAM * VELOCITY_UPSTREAM ** 2) / (2 * ID_3_8)
 PLoss_FRICTION_UPSTREAM_IMPERIAL = PLoss_FRICTION_UPSTREAM / convertToSI(1, "psi", "pressure")
 
 f_DOWNSTREAM_OX = 0.25 / (m.log10((ROUGHNESS / ID_1_2) / 3.7 + 5.74 / (Re_DOWNSTREAM_OX ** 0.9))) ** 2
@@ -147,7 +212,7 @@ PLoss_FRICTION_DOWNSTREAM_FUEL_1_IMPERIAL = PLoss_FRICTION_DOWNSTREAM_FUEL_1 / c
 f_DOWNSTREAM_FUEL_2 = 0.25 / (m.log10((ROUGHNESS / ID_1_2) / 3.7 + 5.74 / (Re_DOWNSTREAM_FUEL_2 ** 0.9))) ** 2
 PLoss_FRICTION_DOWNSTREAM_FUEL_2 = (f_DOWNSTREAM_FUEL_2 * N2_DOWNSTREAM.density * L_DOWNSTREAM_FUEL_2 * VELOCITY_DOWNSTREAM_FUEL_2 ** 2) / (2 * ID_1_2)
 PLoss_FRICTION_DOWNSTREAM_FUEL_2_IMPERIAL = PLoss_FRICTION_DOWNSTREAM_FUEL_2 / convertToSI(1, "psi", "pressure")
-print(f"Pressure Loss due to friction U.S.(1/4\"): {PLoss_FRICTION_UPSTREAM_IMPERIAL:.2f}PSI, D.S.OX(1/2\"): {PLoss_FRICTION_DOWNSTREAM_OX_IMPERIAL:.2f}PSI, D.S.FUEL(1/2\"): {PLoss_FRICTION_DOWNSTREAM_FUEL_1_IMPERIAL:.2f}PSI, D.S.FUEL(1/4\"): {PLoss_FRICTION_DOWNSTREAM_FUEL_2_IMPERIAL:.2f}PSI")
+print(f"Pressure Loss due to friction U.S.(3/8\"): {PLoss_FRICTION_UPSTREAM_IMPERIAL:.2f}PSI, D.S.OX(1/2\"): {PLoss_FRICTION_DOWNSTREAM_OX_IMPERIAL:.2f}PSI, D.S.FUEL(1/2\"): {PLoss_FRICTION_DOWNSTREAM_FUEL_1_IMPERIAL:.2f}PSI, D.S.FUEL(1/4\"): {PLoss_FRICTION_DOWNSTREAM_FUEL_2_IMPERIAL:.2f}PSI")
 
 PLoss_UPSTREAM += PLoss_FITTINGS_UPSTREAM + PLoss_FRICTION_UPSTREAM
 PLoss_DOWNSTREAM_OX += PLoss_FITTINGS_DOWNSTREAM_OX + PLoss_FRICTION_DOWNSTREAM_OX
@@ -162,7 +227,7 @@ P_DOWNSTREAM_OX_FINAL = P_DOWNSTREAM - PLoss_DOWNSTREAM_OX_IMPERIAL
 P_DOWNSTREAM_FUEL_FINAL = P_DOWNSTREAM - PLoss_DOWNSTREAM_FUEL_IMPERIAL
 
 #print("[dP] Pressure Loss, Imperial\nUpstream: ", PLoss_UPSTREAM_IMPERIAL, "[Psi]\nDownstream: ", PLoss_DOWNSTREAM_IMPERIAL,"[Psi]")
-print(f"UPSTREAM (1/4\"): Initial: {P_UPSTREAM:.0f}PSI -> Final: {P_UPSTREAM_FINAL:.2f}PSI (-{PLoss_UPSTREAM_IMPERIAL:.0f}) @ {MASSRATE_UPSTREAM:.3f}kg/s")
+print(f"UPSTREAM (3/8\"): Initial: {P_UPSTREAM:.0f}PSI -> Final: {P_UPSTREAM_FINAL:.2f}PSI (-{PLoss_UPSTREAM_IMPERIAL:.0f}) @ {MASSRATE_UPSTREAM:.3f}kg/s")
 print(f"DOWNSTREAM OX (1/2\"): Initial: {P_DOWNSTREAM:.0f}PSI -> Final: {P_DOWNSTREAM_OX_FINAL:.2f}PSI (-{PLoss_DOWNSTREAM_OX_IMPERIAL:.0f}) @ {MASSRATE_DOWNSTREAM_OX:.3f}kg/s")
 print(f"DOWNSTREAM FUEL (1/2 -> 1/4\"): Initial: {P_DOWNSTREAM:.0f}PSI -> Final: {P_DOWNSTREAM_FUEL_FINAL:.2f}PSI (-{PLoss_DOWNSTREAM_FUEL_IMPERIAL:.0f}) @ {MASSRATE_DOWNSTREAM_FUEL:.3f}kg/s")
 

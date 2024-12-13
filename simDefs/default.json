@@ -38,7 +38,7 @@
             "fluid": "N2",
             "temperature": 15,
             "temperatureUnit": "C",
-            "pressure": 5880,
+            "pressure": 5800,
             "pressureUnit": "psi",
             "volume": 15.45,
             "volumeUnit": "L"
@@ -79,9 +79,9 @@
         "timeStepUnit": "s"
     },
     "parameters": {
-        "oxMassFlow": 3.681,
+        "oxMassFlow": 2.6343,
         "oxMassFlowUnit": "kg",
-        "fuelMassFlow": 0.741,
+        "fuelMassFlow": 0.53,
         "fuelMassFlowUnit": "kg"
     }
 }
