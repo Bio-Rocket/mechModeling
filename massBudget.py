@@ -128,12 +128,9 @@ plt.axvline(x=realMaxOF, color='red', linestyle='--', linewidth=0.5)
 ax.set_ylabel("Specific Impulse (s)")
 ax.set_xlabel("O/F Ratio")
 ax.legend(["Equilibrium", "Frozen", "Real", "Optimal OF Ratio"])
-plt.show()
+#plt.show()
 
-fig.savefig("OF Ratio", dpi=None,
-        orientation='portrait', papertype=None, format=None,
-        transparent=True, bbox_inches=None, pad_inches=0.1,
-        frameon=None)
+#fig.savefig("OF Ratio", dpi=None, orientation='portrait', papertype=None, format=None,transparent=True, bbox_inches=None, pad_inches=0.1,frameon=None)
 
 
 
@@ -245,20 +242,25 @@ mass = []
 thrust = []
 n = []
 #Finding rocket mass / thrust requirement
-for i in range(100):
+for i in range(10):
     variableMass = getVariableMass(fixedRocketMass + variableMass)
-    mass.append(variableMass + fixedRocketMass)
+    mass.append(g * (variableMass + fixedRocketMass))
     thrust.append(g * (fixedRocketMass + variableMass) * TWR)
     n.append(i)
 
-
+#fig.close()
 #plotting convergence of thrust, rocket mass.
 fig, ax = plt.subplots()
 
 ax.plot(n, thrust)
-ax.set_ylabel("Thrust (N)")
+#ax.plot(n, mass)
+ax.set_ylabel("Required Thrust (N)")
 ax.set_xlabel("Iterations")
-#plt.show()
+ax.set_title("Iterative Engine Sizing")
+plt.xticks(ticks=[1, 3, 5, 7, 9])
+plt.show()
+
+fig.savefig("Engine Sizing", dpi=None, orientation='portrait', papertype=None, format=None,transparent=True, bbox_inches=None, pad_inches=0.1,frameon=None)
 
 
 def rocketDesign(thrust):

@@ -362,7 +362,7 @@ class Engine:
             #set to True to run only once, for testing
             #endReached = True
 
-        self.log.to_csv("log.csv")
+        self.log.to_csv("ActiveControlLog.csv")
 
     def RegulatorBlowDown(self):
         print("Running Simulation...")
@@ -473,6 +473,59 @@ class Engine:
             #using a fixed temperature lapse rate to limit the degree of cooling to a reasonable value
             self.pressTank.gas.SetIntrinsicProperties("density", density, "temperature", self.pressTank.gas.temperature - (40/3 * self.simControl.timeStep))
             self.pressTank.gas.SetExtrinsicProperties("volume", self.pressTank.gas.volume)
+
+            #update the log
+            self.Log()
+
+        self.log.to_csv("log.csv")
+
+    def BlowDown(self):
+        print("Running Simulation...")
+
+        self.Log()
+
+        endReached = False
+
+        while not endReached:
+
+            #update the time
+            self.simControl.UpdateTime()
+
+            if self.simControl.currentTime > self.endConditions.endTime:
+                endReached = True
+                print("Simulation terminated. Reached end time.")
+                break
+
+            #print sim status to console every 50 time steps.
+            if int( self.simControl.currentTime * (1 / self.simControl.timeStep)) % 50 == 0:
+                print("Current time: %.3f" % self.simControl.currentTime)
+
+
+            #update the fuel Tank
+            m = self.fuelTank.mass - (self.simControl.timeStep * self.parameters.fuelMassFlow)
+
+            if m <= self.endConditions.lowFuelMass:
+                endReached = True
+                print("Simulation terminated. Ran out of fuel.")
+                break
+
+            self.fuelTank.mass = m
+            self.fuelTank.volume = self.fuelTank.mass / self.fuelTank.density
+
+            #drain the oxidizer tank
+            m = self.oxTank.liquid.RemoveMass(self.parameters.oxMassFlow, self.simControl.timeStep)
+
+            if m <= self.endConditions.lowOxMass:
+                endReached = True
+                print("Simulation terminated. Ran out of oxidizer.")
+                break
+
+            u = self.oxTank.liquid.RemoveEnergy(self.parameters.oxMassFlow, self.simControl.timeStep)
+            density = self.oxTank.liquid.mass / self.oxTank.liquid.volume
+            self.oxTank.liquid.SetIntrinsicProperties("density", density, "internalEnergy", u)
+            self.oxTank.liquid.SetExtrinsicProperties("mass", m)
+
+            self.oxTank.volume = self.oxTank.initialVolume + (self.fuelTank.initialVolume - self.fuelTank.volume)
 
             #update the log
             self.Log()

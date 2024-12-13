@@ -11,4 +11,4 @@ dic = LoadJSON("simDefs/default.json") # Mass budget values as of Sept. 15, 2024
 engine = Engine()
 engine.Load(dic)
 
-engine.RegulatorBlowDown()
+engine.runSim()
