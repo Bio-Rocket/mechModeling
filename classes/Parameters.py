@@ -10,3 +10,4 @@ class Parameters:
     def load(self, dic):
         self.oxMassFlow = convertToSI(dic["oxMassFlow"], dic["oxMassFlowUnit"], "mass")
         self.fuelMassFlow = convertToSI(dic["fuelMassFlow"], dic["fuelMassFlowUnit"], "mass")
+        self.mixtureRatio = dic["mixtureRatio"]

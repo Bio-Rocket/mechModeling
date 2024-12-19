@@ -30,15 +30,15 @@ class PressTank:
     def InitLog(self, log, name):
         name += "." + self.name
         log[name + ".pressurantMassFlowRate"] = pd.Series(dtype='float64')
-        log[name + ".pressurantMassFlowRateFuel"] = pd.Series(dtype='float64')
         log[name + ".pressurantMassFlowRateOx"] = pd.Series(dtype='float64')
+        log[name + ".pressurantMassFlowRateFuel"] = pd.Series(dtype='float64')
         self.gas.InitLog(log, name)
 
     def Log(self, log, name):
         name += "." + self.name
         log[name +".pressurantMassFlowRate"].iat[-1] = self.pressurantMassFlowRate
-        log[name +".pressurantMassFlowRateFuel"].iat[-1] = self.pressurantMassFlowRateFuel
         log[name +".pressurantMassFlowRateOx"].iat[-1] = self.pressurantMassFlowRateOx
+        log[name +".pressurantMassFlowRateFuel"].iat[-1] = self.pressurantMassFlowRateFuel
         self.gas.Log(log, name)
 
     #calculates gas mass flow rate required to keep ullage pressure in oxTank constant

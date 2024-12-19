@@ -82,6 +82,7 @@
         "oxMassFlow": 2.6343,
         "oxMassFlowUnit": "kg",
         "fuelMassFlow": 0.5300,
-        "fuelMassFlowUnit": "kg"
+        "fuelMassFlowUnit": "kg",
+        "mixtureRatio": 4.9705
     }
 }
